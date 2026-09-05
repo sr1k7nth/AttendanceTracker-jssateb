@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..schemas import UserScrapeRequest, UserLogin
-from scrapper import scrapper
+from scrapper import scrapper, LoginError
 from ..models import Attendance as AttendanceModel
 from ..oauth import get_current_user
 from ..database import get_db
@@ -15,7 +15,11 @@ router = APIRouter(prefix="/scraper", tags=["Scraper"])
 def _scrape_and_cache(
     usn: str, password: str, db: Session, leaderboard_opt: bool = False
 ):
-    data = scrapper(usn, password)
+    try:
+        data = scrapper(usn, password)
+    except LoginError as e:
+        raise HTTPException(401, detail=str(e))
+
     if data.get("status") == "error":
         raise HTTPException(401, detail=data["error"])
 
