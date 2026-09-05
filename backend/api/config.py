@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str
     JWT_SECRET_KEY: str
     OAUTH_ALGORITHM: str
+    CORS_ORIGINS: str = "http://localhost:3000"
 
     @property
     def database_url(self):
