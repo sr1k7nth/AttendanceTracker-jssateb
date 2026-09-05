@@ -1,9 +1,14 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from .database import engine, Base
 from .routes import fetch_attendance, scrape, leaderboard
 
-from fastapi.middleware.cors import CORSMiddleware
-
 app = FastAPI()
+
+
+@app.on_event("startup")
+def create_tables():
+    Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
