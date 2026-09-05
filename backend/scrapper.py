@@ -173,4 +173,4 @@ def scrapper(usn: str, password: str):
 
 
 if __name__ == "__main__":
-    print(scrapper("JS240955", "Srikanth02av$"))
+    pass
