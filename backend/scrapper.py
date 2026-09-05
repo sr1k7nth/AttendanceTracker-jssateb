@@ -24,7 +24,7 @@ def scrapper(usn: str, password: str):
             page.fill("#txtUserID", usn, timeout=5000)
             page.fill("#txtPassword", password, timeout=5000)
             try:
-                with page.expect_navigation(wait_until="networkidle", timeout=15000):
+                with page.expect_navigation(wait_until="domcontentloaded", timeout=15000):
                     page.click("#myBtn")
             except TimeoutError:
                 return {"status": "portal down", "error": "Login page time out"}
@@ -86,7 +86,7 @@ def scrapper(usn: str, password: str):
                                     }
                                 )
 
-            with page.expect_navigation(wait_until="networkidle", timeout=15000):
+            with page.expect_navigation(wait_until="domcontentloaded", timeout=15000):
                 page.get_by_role("button", name="Summary").click()
 
             page.wait_for_selector("table.fancyTable", timeout=15000)
