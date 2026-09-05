@@ -23,21 +23,20 @@ def scrapper(usn: str, password: str):
             page.check("#optLoginAsStudent")
             page.fill("#txtUserID", usn, timeout=5000)
             page.fill("#txtPassword", password, timeout=5000)
-            try:
-                with page.expect_navigation(wait_until="domcontentloaded", timeout=15000):
-                    page.click("#myBtn")
-            except TimeoutError:
-                return {"status": "portal down", "error": "Login page time out"}
+            page.click("#myBtn")
+            time.sleep(2)
 
             try:
+                page.wait_for_selector("#divModelValidation_alertmsg", timeout=5000)
                 error_box = page.query_selector("#divModelValidation_alertmsg")
                 if error_box:
                     msg = error_box.inner_text().strip().lower()
                     if "incorrect user id" in msg or "password" in msg:
                         raise LoginError("Invalid credentials")
             except TimeoutError:
-                pass  # login worked
+                pass  # no error box = login worked
 
+            page.wait_for_selector("text=Student Attendance", timeout=15000)
             page.click("text=Student Attendance")
 
             try:
@@ -86,9 +85,7 @@ def scrapper(usn: str, password: str):
                                     }
                                 )
 
-            with page.expect_navigation(wait_until="domcontentloaded", timeout=15000):
-                page.get_by_role("button", name="Summary").click()
-
+            page.get_by_role("button", name="Summary").click()
             page.wait_for_selector("table.fancyTable", timeout=15000)
             time.sleep(1)
 
