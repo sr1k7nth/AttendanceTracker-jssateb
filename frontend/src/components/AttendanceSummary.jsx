@@ -9,20 +9,24 @@ function pctColor(pct) {
 
 export default function AttendanceSummary({ data }) {
   const [target, setTarget] = useState('');
+  const [calculated, setCalculated] = useState(null);
 
   if (!data) return null;
 
   const totalClasses = data.summary?.reduce((s, x) => s + parseInt(x.classes || '0'), 0) || 0;
   const totalPresent = data.summary?.reduce((s, x) => s + parseInt(x.present || '0'), 0) || 0;
 
-  let customResult = null;
-  const t = parseFloat(target);
-  if (!isNaN(t) && t > 0 && t <= 100 && totalClasses > 0) {
+  function handleCalculate() {
+    const t = parseFloat(target);
+    if (isNaN(t) || t <= 0 || t > 100 || totalClasses === 0) {
+      setCalculated(null);
+      return;
+    }
     const ratio = t / 100;
     if (totalPresent / totalClasses >= ratio) {
-      customResult = { canMiss: Math.floor((totalPresent - ratio * totalClasses) / ratio) };
+      setCalculated({ canMiss: Math.floor((totalPresent - ratio * totalClasses) / ratio) });
     } else {
-      customResult = { needAttend: Math.ceil((ratio * totalClasses - totalPresent) / (1 - ratio)) };
+      setCalculated({ needAttend: Math.ceil((ratio * totalClasses - totalPresent) / (1 - ratio)) });
     }
   }
 
@@ -67,15 +71,20 @@ export default function AttendanceSummary({ data }) {
             max="100"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCalculate()}
           />
-          <span className="calc-result">
-            {customResult && (
-              customResult.canMiss !== undefined
-                ? <>can miss <strong>{customResult.canMiss}</strong></>
-                : <>attend <strong>{customResult.needAttend}</strong> more</>
-            )}
-          </span>
+          <button className="btn calc-btn" onClick={handleCalculate}>
+            Calculate
+          </button>
         </div>
+        {calculated && (
+          <p className="calc-result">
+            {calculated.canMiss !== undefined
+              ? <>You can miss <strong>{calculated.canMiss}</strong> more classes.</>
+              : <>You need to attend <strong>{calculated.needAttend}</strong> more classes.</>
+            }
+          </p>
+        )}
       </div>
 
       {/* Subject-wise Attendance */}

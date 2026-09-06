@@ -570,15 +570,24 @@ a:hover {
   font: inherit;
   font-size: 0.85rem;
   outline: none;
+  -moz-appearance: textfield;
 }
 
-.calc-input:focus {
-  border-color: var(--green);
+.calc-input::-webkit-outer-spin-button,
+.calc-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.calc-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
 }
 
 .calc-result {
   font-size: 0.8rem;
   color: var(--text-dim);
+  margin-top: 0.5rem;
 }
 
 .calc-result strong {
