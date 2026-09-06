@@ -152,7 +152,7 @@ function App() {
         </div>
         <p className="footer-credit">
           made by{' '}
-          <a href="https://github.com/sr1k7nth" target="_blank" rel="noopener noreferrer">
+          <a href="https://sr1k7nth.is-a.dev/" target="_blank" rel="noopener noreferrer">
             sr1k7nth
           </a>
         </p>
