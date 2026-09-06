@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchLeaderboard } from '../api';
 
-export default function Leaderboard() {
+export default function Leaderboard({ myBranch }) {
   const [users, setUsers] = useState([]);
   const [sort, setSort] = useState('desc');
   const [branch, setBranch] = useState('ALL');
@@ -34,31 +34,35 @@ export default function Leaderboard() {
         </select>
         <select value={branch} onChange={(e) => setBranch(e.target.value)}>
           <option value="ALL">All branches</option>
-          <option value="CSE">CSE</option>
-          <option value="ISE">ISE</option>
-          <option value="AIML">AIML</option>
-          <option value="ECE">ECE</option>
-          <option value="EEE">EEE</option>
-          <option value="ME">ME</option>
-          <option value="CV">CV</option>
-          <option value="CH">CH</option>
+          {myBranch && <option value={myBranch}>{myBranch}</option>}
         </select>
       </div>
 
       <h3 className="section-title">Rankings</h3>
       <ul className="leaderboard-list">
-        {users.map((u, i) => (
-          <li key={u.usn} className="leaderboard-row">
-            <span className="leaderboard-rank">{i + 1}</span>
-            <span className="leaderboard-usn">{u.usn}</span>
-            <span className={`attendance-pct ${u.total_avg >= 85 ? 'high' : u.total_avg >= 75 ? 'mid' : 'low'}`}>
-              {u.total_avg}%
-            </span>
-            {u.branch && (
-              <span className="leaderboard-branch">{u.branch}</span>
-            )}
-          </li>
-        ))}
+        {users.map((u, i) => {
+          const ist = new Date(u.timestamp).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          });
+          return (
+            <li key={u.usn} className="leaderboard-row">
+              <span className="leaderboard-rank">{i + 1}</span>
+              <span className="leaderboard-usn">{u.usn}</span>
+              <span className={`attendance-pct ${u.total_avg >= 85 ? 'high' : u.total_avg >= 75 ? 'mid' : 'low'}`}>
+                {u.total_avg}%
+              </span>
+              {u.branch && (
+                <span className="leaderboard-branch">{u.branch}</span>
+              )}
+              <span className="leaderboard-time">{ist}</span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

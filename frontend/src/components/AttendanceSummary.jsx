@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 function pctColor(pct) {
   const n = parseFloat(pct);
   if (n >= 85) return 'high';
@@ -6,7 +8,23 @@ function pctColor(pct) {
 }
 
 export default function AttendanceSummary({ data }) {
+  const [target, setTarget] = useState('');
+
   if (!data) return null;
+
+  const totalClasses = data.summary?.reduce((s, x) => s + parseInt(x.classes || '0'), 0) || 0;
+  const totalPresent = data.summary?.reduce((s, x) => s + parseInt(x.present || '0'), 0) || 0;
+
+  let customResult = null;
+  const t = parseFloat(target);
+  if (!isNaN(t) && t > 0 && t <= 100 && totalClasses > 0) {
+    const ratio = t / 100;
+    if (totalPresent / totalClasses >= ratio) {
+      customResult = { canMiss: Math.floor((totalPresent - ratio * totalClasses) / ratio) };
+    } else {
+      customResult = { needAttend: Math.ceil((ratio * totalClasses - totalPresent) / (1 - ratio)) };
+    }
+  }
 
   return (
     <div>
@@ -27,8 +45,36 @@ export default function AttendanceSummary({ data }) {
           <div className="stat-value yellow">{data.can_miss75}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Must attend</div>
+          <div className="stat-label">Must attend (85%)</div>
           <div className="stat-value red">{data.need_to_attend85}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Must attend (75%)</div>
+          <div className="stat-value red">{data.need_to_attend75}</div>
+        </div>
+      </div>
+
+      {/* Custom Target Calculator */}
+      <div className="custom-calc">
+        <h3 className="section-title">Custom Target</h3>
+        <div className="calc-row">
+          <span className="calc-label">Target %</span>
+          <input
+            type="number"
+            className="calc-input"
+            placeholder="e.g. 80"
+            min="1"
+            max="100"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+          />
+          <span className="calc-result">
+            {customResult && (
+              customResult.canMiss !== undefined
+                ? <>can miss <strong>{customResult.canMiss}</strong></>
+                : <>attend <strong>{customResult.needAttend}</strong> more</>
+            )}
+          </span>
         </div>
       </div>
 

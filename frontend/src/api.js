@@ -44,8 +44,11 @@ export function getToken() {
   return localStorage.getItem('token');
 }
 
-export function getUsn() {
-  return localStorage.getItem('usn');
+export async function refreshAttendance(password) {
+  return request('/scraper/refresh', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
 }
 
 export function logout() {
