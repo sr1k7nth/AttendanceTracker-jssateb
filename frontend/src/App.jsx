@@ -160,6 +160,7 @@ function App() {
         ) : error ? (
           <div className="error-block">
             <p className="error-msg">{error}</p>
+            <p className="error-hint">The server may be waking up from sleep. Wait a minute and try again.</p>
             <p className="error-feedback">
               Something wrong? <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">Report it</a>
             </p>

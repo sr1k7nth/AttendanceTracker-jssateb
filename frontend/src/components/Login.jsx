@@ -92,6 +92,7 @@ export default function Login({ onLogin, onPassword }) {
         {error && (
           <div className="error-block">
             <p className="error-msg">{error}</p>
+            <p className="error-hint">Login failed? The server may be waking up from sleep. Wait a minute and try again.</p>
             <p className="error-feedback">
               Persistent issue? <a href="https://forms.gle/RW7jREYrceoacjxY9" target="_blank" rel="noopener noreferrer">Report it</a>
             </p>
