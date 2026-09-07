@@ -29,6 +29,7 @@ export async function login(usn, password, leaderboardOpt) {
   });
   localStorage.setItem('token', data.token);
   localStorage.setItem('usn', usn);
+  localStorage.setItem('leaderboard_opt', JSON.stringify(leaderboardOpt));
   return data;
 }
 

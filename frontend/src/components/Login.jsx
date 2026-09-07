@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { login, getTokenPayload } from '../api';
+import { login } from '../api';
 
 export default function Login({ onLogin, onPassword }) {
   const [usn, setUsn] = useState(() => localStorage.getItem('usn') || '');
   const [password, setPassword] = useState('');
   const [leaderboardOpt, setLeaderboardOpt] = useState(() => {
-    const payload = getTokenPayload();
-    return payload?.leaderboard_opt ?? false;
+    const stored = localStorage.getItem('leaderboard_opt');
+    return stored !== null ? JSON.parse(stored) : false;
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
