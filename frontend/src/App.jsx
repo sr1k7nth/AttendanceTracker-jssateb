@@ -5,6 +5,7 @@ import AttendanceSummary from './components/AttendanceSummary';
 import Leaderboard from './components/Leaderboard';
 import Faq from './components/Faq';
 import BetaBanner from './components/BetaBanner';
+import Terms from './components/Terms';
 import './index.css';
 
 const FEEDBACK_URL = 'https://forms.gle/RW7jREYrceoacjxY9';
@@ -136,6 +137,12 @@ function App() {
               >
                 FAQ
               </button>
+              <button
+                className={tab === 'terms' ? 'active' : ''}
+                onClick={() => setTab('terms')}
+              >
+                Terms
+              </button>
             </nav>
             {tab === 'attendance' && (
               <button
@@ -151,10 +158,12 @@ function App() {
       </header>
 
       <main className="app-content">
-        {tab === 'faq' ? (
+        {tab === 'terms' ? (
+          <Terms onBack={() => { setTab(loggedIn ? 'attendance' : 'attendance'); window.scrollTo(0, 0); }} />
+        ) : tab === 'faq' ? (
           <Faq onBack={handleFaqBack} />
         ) : !loggedIn ? (
-          <Login onLogin={handleLogin} onPassword={(pw) => { setSessionPassword(pw); sessionStorage.setItem('sessionPassword', pw); }} />
+          <Login onLogin={handleLogin} onPassword={(pw) => { setSessionPassword(pw); sessionStorage.setItem('sessionPassword', pw); }} onTerms={() => setTab('terms')} />
         ) : loading ? (
           <p className="loading">Fetching your attendance...</p>
         ) : error ? (

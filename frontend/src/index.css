@@ -34,6 +34,69 @@
 }
 
 /* ========================================
+   Terms & Conditions Page
+   ======================================== */
+
+.terms-page h2 {
+  font-size: 1.56rem;
+  color: var(--text-bright);
+  margin-bottom: 1.25rem;
+}
+
+.terms-content h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-top: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.terms-content p,
+.terms-content li {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.terms-content ul {
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.terms-content li {
+  margin-bottom: 0.3rem;
+}
+
+.terms-content a {
+  color: var(--text-bright);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.terms-content a:hover {
+  color: var(--green);
+}
+
+.terms-link {
+  background: none;
+  border: none;
+  color: var(--text-bright);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.terms-link:hover {
+  color: var(--green);
+}
+
+/* ========================================
    Beta Banner
    ======================================== */
 

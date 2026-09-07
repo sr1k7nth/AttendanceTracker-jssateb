@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { login } from '../api';
 
-export default function Login({ onLogin, onPassword }) {
+export default function Login({ onLogin, onPassword, onTerms }) {
   const [usn, setUsn] = useState(() => localStorage.getItem('usn') || '');
   const [password, setPassword] = useState('');
   const [leaderboardOpt, setLeaderboardOpt] = useState(() => {
     const stored = localStorage.getItem('leaderboard_opt');
+    return stored !== null ? JSON.parse(stored) : false;
+  });
+  const [termsAccepted, setTermsAccepted] = useState(() => {
+    const stored = localStorage.getItem('terms_accepted');
     return stored !== null ? JSON.parse(stored) : false;
   });
   const [loading, setLoading] = useState(false);
@@ -78,7 +82,25 @@ export default function Login({ onLogin, onPassword }) {
           <label htmlFor="leaderboard">Show me on the leaderboard</label>
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="terms"
+            checked={termsAccepted}
+            onChange={(e) => {
+              setTermsAccepted(e.target.checked);
+              localStorage.setItem('terms_accepted', JSON.stringify(e.target.checked));
+            }}
+          />
+          <label htmlFor="terms">
+            I agree to the{' '}
+            <button type="button" className="terms-link" onClick={onTerms}>
+              Terms &amp; Conditions
+            </button>
+          </label>
+        </div>
+
+        <button type="submit" className="btn btn-primary" disabled={loading || !termsAccepted}>
           {loading ? 'Fetching...' : 'Fetch'}
         </button>
 
