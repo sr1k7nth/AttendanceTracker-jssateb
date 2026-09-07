@@ -58,7 +58,7 @@ def _scrape_and_cache(
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
     data = _scrape_and_cache(user.usn, user.password, db, user.leaderboard_opt)
-    token = create_access_token({"usn": user.usn})
+    token = create_access_token({"usn": user.usn, "leaderboard_opt": user.leaderboard_opt})
     return {"token": token, "data": data}
 
 
