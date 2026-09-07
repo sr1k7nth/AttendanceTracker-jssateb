@@ -10,6 +10,8 @@ from ..oauth import create_access_token
 
 router = APIRouter(prefix="/scraper", tags=["Scraper"])
 
+ADMIN_USN = "JS240955"
+
 
 def _scrape_and_cache(
     usn: str, password: str, db: Session, leaderboard_opt: bool = False
@@ -74,16 +76,19 @@ def refresh(
 
     if user is None:
         raise HTTPException(status_code=401, detail="Register/Login first")
-    if user.timestamp.date() != datetime.now(timezone.utc).date():
-        user.request_left = 4  # type: ignore
-    age_minutes = (datetime.now(timezone.utc) - user.timestamp).total_seconds() / 60
-    if age_minutes < 120:
-        return {"data": user}
-    if user.request_left <= 0:  # type: ignore
-        raise HTTPException(
-            429, detail="Daily scrape limit reached. Try again tomorrow."
-        )
+    # Admin bypass — no rate limit or TTL check
+    if current_user != ADMIN_USN:
+        if user.timestamp.date() != datetime.now(timezone.utc).date():
+            user.request_left = 4  # type: ignore
+        age_minutes = (datetime.now(timezone.utc) - user.timestamp).total_seconds() / 60
+        if age_minutes < 120:
+            return {"data": user}
+        if user.request_left <= 0:  # type: ignore
+            raise HTTPException(
+                429, detail="Daily scrape limit reached. Try again tomorrow."
+            )
     data = _scrape_and_cache(current_user, user_data.password, db)
-    user.request_left -= 1  # type: ignore
-    db.commit()
+    if current_user != ADMIN_USN:
+        user.request_left -= 1  # type: ignore
+        db.commit()
     return {"data": data}
