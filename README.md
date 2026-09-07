@@ -42,7 +42,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 | Auth | JWT (PyJWT, 7-day tokens) | — |
 | Migrations | Alembic | — |
 | Monitoring | UptimeRobot (15 min pings) | — |
-| Domain | Custom via foo-ng | `jatracker.foo.ng` |
+| Domain | Custom via [foo-ng](https://github.com/Pokymon/foo.ng) | `jatracker.foo.ng` |
 
 ## How It Works
 
@@ -184,3 +184,7 @@ This is a personal project for JSSATEB students. Not affiliated with the college
 ## Terms & Conditions
 
 See [TERMS.md](TERMS.md) for the full terms and conditions.
+
+## Credits
+
+- [foo-ng](https://github.com/Pokymon/foo-ng) — free custom subdomains
