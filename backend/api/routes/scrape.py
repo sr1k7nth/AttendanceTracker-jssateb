@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from ..schemas import UserScrapeRequest, UserLogin
+from ..schemas import UserScrapeRequest, UserLogin, AttendanceResponse
 from scrapper import scrapper, LoginError
 from ..models import Attendance as AttendanceModel
 from ..oauth import get_current_user
@@ -58,15 +58,32 @@ def _scrape_and_cache(
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
     data = _scrape_and_cache(user.usn, user.password, db, user.leaderboard_opt)
-    token = create_access_token({"usn": user.usn, "leaderboard_opt": user.leaderboard_opt})
+    token = create_access_token(
+        {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
+    )
     return {"token": token, "data": data}
 
 
-@router.post("/refresh")
+@router.post("/refresh", response_model=AttendanceResponse)
 def refresh(
     user_data: UserScrapeRequest,
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    user = db.query(AttendanceModel).filter(AttendanceModel.usn == current_user).first()
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="Register/Login first")
+    if user.timestamp.date() != datetime.now(timezone.utc).date():
+        user.request_left = 4  # type: ignore
+    age_minutes = (datetime.now(timezone.utc) - user.timestamp).total_seconds() / 60
+    if age_minutes < 120:
+        return {"data": user}
+    if user.request_left <= 0:  # type: ignore
+        raise HTTPException(
+            429, detail="Daily scrape limit reached. Try again tomorrow."
+        )
     data = _scrape_and_cache(current_user, user_data.password, db)
+    user.request_left -= 1  # type: ignore
+    db.commit()
     return {"data": data}

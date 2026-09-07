@@ -57,3 +57,4 @@ class AttendanceResponse(BaseModel):
     leaderboard_opt: bool
     sem: int | None = None
     branch: str | None = None
+    request_left: int

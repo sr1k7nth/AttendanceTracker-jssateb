@@ -82,7 +82,21 @@ export default function Login({ onLogin, onPassword }) {
           {loading ? 'Fetching...' : 'Fetch'}
         </button>
 
-        {error && <p className="error-msg">{error}</p>}
+        {loading && (
+          <div className="login-loading">
+            <div className="spinner" />
+            <p>Scraping your attendance data. This may take 20–25 seconds.</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-block">
+            <p className="error-msg">{error}</p>
+            <p className="error-feedback">
+              Persistent issue? <a href="https://forms.gle/RW7jREYrceoacjxY9" target="_blank" rel="noopener noreferrer">Report it</a>
+            </p>
+          </div>
+        )}
       </form>
     </div>
   );

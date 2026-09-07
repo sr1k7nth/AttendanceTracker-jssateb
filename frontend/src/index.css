@@ -34,6 +34,145 @@
 }
 
 /* ========================================
+   Beta Banner
+   ======================================== */
+
+.beta-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.beta-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--bg);
+  background: var(--yellow);
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.beta-text {
+  flex: 1;
+}
+
+.beta-text a {
+  color: var(--text-bright);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.beta-text a:hover {
+  color: var(--green);
+}
+
+.beta-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.beta-dismiss:hover {
+  color: var(--text-bright);
+}
+
+/* ========================================
+   Request Left
+   ======================================== */
+
+.request-left {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+/* ========================================
+   Login Loading Spinner
+   ======================================== */
+
+.login-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.login-loading p {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ========================================
+   Error Block (with feedback link)
+   ======================================== */
+
+.error-block {
+  margin-top: 0.75rem;
+}
+
+.error-block .error-msg {
+  margin-top: 0;
+}
+
+.error-feedback {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+}
+
+.error-feedback a {
+  color: var(--text-bright);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.error-feedback a:hover {
+  color: var(--green);
+}
+
+/* ========================================
    Reset & Base
    ======================================== */
 

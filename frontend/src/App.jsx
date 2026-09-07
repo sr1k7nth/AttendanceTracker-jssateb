@@ -4,7 +4,10 @@ import Login from './components/Login';
 import AttendanceSummary from './components/AttendanceSummary';
 import Leaderboard from './components/Leaderboard';
 import Faq from './components/Faq';
+import BetaBanner from './components/BetaBanner';
 import './index.css';
+
+const FEEDBACK_URL = 'https://forms.gle/RW7jREYrceoacjxY9';
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!getToken());
@@ -66,7 +69,11 @@ function App() {
   }
 
   function handleRefresh() {
-    if (!sessionPassword) return;
+    if (!sessionPassword) {
+      // No password in session — redirect to login
+      handleLogout();
+      return;
+    }
     setLoading(true);
     setError('');
     refreshAttendance(sessionPassword)
@@ -93,6 +100,7 @@ function App() {
 
   return (
     <div className="app">
+      <BetaBanner />
       <header className="header">
         <div className="header-top">
           <h1>Attendance</h1>
@@ -133,7 +141,7 @@ function App() {
               <button
                 className="btn"
                 onClick={handleRefresh}
-                disabled={loading || !sessionPassword}
+                disabled={loading}
               >
                 {loading ? 'Refreshing...' : 'Refresh'}
               </button>
@@ -150,7 +158,12 @@ function App() {
         ) : loading ? (
           <p className="loading">Fetching your attendance...</p>
         ) : error ? (
-          <p className="error-msg">{error}</p>
+          <div className="error-block">
+            <p className="error-msg">{error}</p>
+            <p className="error-feedback">
+              Something wrong? <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">Report it</a>
+            </p>
+          </div>
         ) : tab === 'attendance' ? (
           <AttendanceSummary data={attendance} />
         ) : (

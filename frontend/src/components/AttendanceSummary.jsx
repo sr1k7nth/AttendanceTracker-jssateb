@@ -60,6 +60,13 @@ export default function AttendanceSummary({ data }) {
         </div>
       </div>
 
+      {/* Request limit */}
+      {data.request_left !== undefined && (
+        <p className="request-left">
+          {data.request_left} / 4 refreshes left today
+        </p>
+      )}
+
       {/* Custom Target Calculator */}
       <div className="custom-calc">
         <h3 className="section-title">Custom Target</h3>

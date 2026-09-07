@@ -17,11 +17,7 @@ def get_attendance(
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user = (
-        db.query(AttendanceModel)
-        .filter(AttendanceModel.usn == current_user)
-        .first()
-    )
+    user = db.query(AttendanceModel).filter(AttendanceModel.usn == current_user).first()
 
     if user is None:
         raise HTTPException(status_code=401, detail="Register/Login first")

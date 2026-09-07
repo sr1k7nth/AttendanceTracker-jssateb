@@ -28,3 +28,4 @@ class Attendance(Base):
     leaderboard_opt = Column(Boolean, default=False)
     sem = Column(Integer)
     branch = Column(String)
+    request_left = Column(Integer, default=4)
