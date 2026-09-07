@@ -180,3 +180,7 @@ docker run -p 8000:8000 --env-file .env --network host attendance-backend
 ## License
 
 This is a personal project for JSSATEB students. Not affiliated with the college.
+
+## Terms & Conditions
+
+See [TERMS.md](TERMS.md) for the full terms and conditions.
