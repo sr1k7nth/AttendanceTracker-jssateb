@@ -10,7 +10,12 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!getToken());
   const [tab, setTab] = useState('attendance');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-  const [attendance, setAttendance] = useState(null);
+  const [attendance, setAttendance] = useState(() => {
+    try {
+      const cached = localStorage.getItem('attendance');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sessionPassword, setSessionPassword] = useState(() => sessionStorage.getItem('sessionPassword') || '');
@@ -24,10 +29,23 @@ function App() {
   // Fetch attendance on login
   useEffect(() => {
     if (!loggedIn) return;
+    // If we already have cached data, show it immediately and fetch in background
+    if (attendance) {
+      fetchAttendance()
+        .then((data) => {
+          setAttendance(data);
+          localStorage.setItem('attendance', JSON.stringify(data));
+        })
+        .catch(() => {}); // silently fail, cached data is fine
+      return;
+    }
     setLoading(true);
     setError('');
     fetchAttendance()
-      .then(setAttendance)
+      .then((data) => {
+        setAttendance(data);
+        localStorage.setItem('attendance', JSON.stringify(data));
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [loggedIn]);
@@ -41,6 +59,7 @@ function App() {
     logout();
     setLoggedIn(false);
     setAttendance(null);
+    localStorage.removeItem('attendance');
     setSessionPassword('');
     sessionStorage.removeItem('sessionPassword');
     setTab('attendance');
@@ -51,7 +70,10 @@ function App() {
     setLoading(true);
     setError('');
     refreshAttendance(sessionPassword)
-      .then((res) => setAttendance(res.data))
+      .then((res) => {
+        setAttendance(res.data);
+        localStorage.setItem('attendance', JSON.stringify(res.data));
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }
