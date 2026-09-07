@@ -184,7 +184,3 @@ This is a personal project for JSSATEB students. Not affiliated with the college
 ## Terms & Conditions
 
 See [TERMS.md](TERMS.md) for the full terms and conditions.
-
-## Credits
-
-- [foo-ng](https://github.com/Pokymon/foo-ng) — free custom subdomains
