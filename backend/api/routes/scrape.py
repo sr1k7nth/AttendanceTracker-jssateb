@@ -1,4 +1,3 @@
-from fastapi import FastAPI
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..schemas import UserScrapeRequest, UserLogin
@@ -33,8 +32,8 @@ def _scrape_and_cache(
         existing.need_to_attend75 = data["need_to_attend75"]  # type: ignore
         existing.need_to_attend85 = data["need_to_attend85"]  # type: ignore
         existing.timestamp = datetime.now(timezone.utc)  # type: ignore
-        existing.branch = data["branch"]
-        existing.sem = data["sem"]
+        existing.branch = data["branch"]  # type: ignore
+        existing.sem = data["sem"]  # type: ignore
     else:
         new_user = AttendanceModel(
             usn=usn,
