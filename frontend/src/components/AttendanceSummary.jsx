@@ -18,12 +18,14 @@ export default function AttendanceSummary({ data }) {
 
   function handleCalculate() {
     const t = parseFloat(target);
-    if (isNaN(t) || t <= 0 || t > 100 || totalClasses === 0) {
+    if (isNaN(t) || t < 0 || t > 100 || totalClasses === 0) {
       setCalculated(null);
       return;
     }
     const ratio = t / 100;
-    if (totalPresent / totalClasses >= ratio) {
+    if (ratio === 0) {
+      setCalculated({ canMiss: totalClasses - totalPresent });
+    } else if (totalPresent / totalClasses >= ratio) {
       setCalculated({ canMiss: Math.floor((totalPresent - ratio * totalClasses) / ratio) });
     } else {
       setCalculated({ needAttend: Math.ceil((ratio * totalClasses - totalPresent) / (1 - ratio)) });
@@ -91,16 +93,30 @@ export default function AttendanceSummary({ data }) {
       {data.summary && data.summary.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
           <h3 className="section-title">Subject-wise Attendance</h3>
+
+          {/* Table header */}
+          <div className="subj-table-header">
+            <span className="subj-col-no">#</span>
+            <span className="subj-col-code">Code</span>
+            <span className="subj-col-name">Subject</span>
+            <span className="subj-col-nums">
+              <span className="subj-num-item"><span className="subj-num-label">Cls</span></span>
+              <span className="subj-num-item"><span className="subj-num-label">Pre</span></span>
+            </span>
+            <span className="subj-col-pct">%</span>
+          </div>
+
           <ul className="attendance-list">
-            {data.summary.map((s) => (
+            {data.summary.map((s, i) => (
               <li key={s.code} className="attendance-row">
-                <span className="attendance-name" title={s.name}>
-                  {s.code} — {s.name}
+                <span className="subj-col-no">{s.no || i + 1}</span>
+                <span className="subj-col-code mono">{s.code}</span>
+                <span className="subj-col-name" title={s.name}>{s.name}</span>
+                <span className="subj-col-nums">
+                  <span className="subj-num-item">{s.classes}</span>
+                  <span className="subj-num-item">{s.present}</span>
                 </span>
-                <span className="attendance-dots" />
-                <span className={`attendance-pct ${pctColor(s.percentage)}`}>
-                  {s.percentage}
-                </span>
+                <span className={`subj-col-pct ${pctColor(s.percentage)}`}>{s.percentage}</span>
               </li>
             ))}
           </ul>
