@@ -82,7 +82,7 @@ def refresh(
             user.request_left = 4  # type: ignore
         age_minutes = (datetime.now(timezone.utc) - user.timestamp).total_seconds() / 60
         if age_minutes < 120:
-            return {"data": user}
+            return user
         if user.request_left <= 0:  # type: ignore
             raise HTTPException(
                 429, detail="Daily scrape limit reached. Try again tomorrow."
