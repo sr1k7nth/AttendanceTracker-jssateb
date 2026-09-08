@@ -79,8 +79,8 @@ function App() {
     setError('');
     refreshAttendance(sessionPassword)
       .then((res) => {
-        setAttendance(res.data);
-        localStorage.setItem('attendance', JSON.stringify(res.data));
+        setAttendance(res);
+        localStorage.setItem('attendance', JSON.stringify(res));
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
