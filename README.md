@@ -26,7 +26,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 - **Absent periods** — shows which classes you missed and when
 - **Rate limiting** — 4 refreshes/day per user, 2-hour TTL cache, daily reset
 - **Admin bypass** — unlimited refreshes for the admin
-- **Leaderboard** — opt-in feature to compare attendance with classmates
+- **Leaderboard** — opt-in, shows alias (not USN), attendance %, branch, rank
 - **Beta banner** — always-visible feedback link for bugs and feature requests
 - **Terms & Conditions** — full ToC page with login checkbox
 - **Dark/light theme** — persisted in localStorage
@@ -47,7 +47,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 ## How It Works
 
 ```
-Student opens app → enters USN + password → backend scrapes portal → caches in PostgreSQL → returns JSON
+Student opens app → enters Portal ID + password + alias → backend scrapes portal → caches in PostgreSQL → returns JSON
 ```
 
 - First visit: scrapes portal (~20-25s), caches result, returns JWT
@@ -80,7 +80,7 @@ Attendance-Tracker/
 │   │   ├── App.jsx             # Main app with tabs, theme, auth flow
 │   │   ├── api.js              # API layer
 │   │   ├── components/
-│   │   │   ├── Login.jsx       # Login form + terms checkbox
+│   │   │   ├── Login.jsx       # Login form + alias + terms checkbox
 │   │   │   ├── AttendanceSummary.jsx  # Stats, calculator, subject table
 │   │   │   ├── Leaderboard.jsx # Ranked list with branch filter
 │   │   │   ├── Faq.jsx         # FAQ page
@@ -105,9 +105,10 @@ Attendance-Tracker/
 
 1. **No persistent password storage** — passwords stay in page memory for login and refreshes; reloading or logging out clears them. The backend uses them for each scrape without saving them.
 2. **JWT-based auth** — 7-day tokens, no server-side sessions
-3. **Only attendance data is scraped** — no fees, no personal info
-4. **Open source** — full codebase on GitHub, deployed directly from the repo
-5. **Terms & Conditions** — users must accept before using the service
+3. **Leaderboard privacy** — leaderboard shows alias, attendance %, branch, rank. Portal IDs and detailed records are never shared.
+4. **Only attendance data is scraped** — no fees, no personal info
+5. **Open source** — full codebase on GitHub, deployed directly from the repo
+6. **Terms & Conditions** — users must accept before using the service
 
 ## Rate Limiting
 

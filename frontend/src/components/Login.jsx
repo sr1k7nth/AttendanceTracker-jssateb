@@ -4,7 +4,7 @@ import { login } from '../api';
 export default function Login({ onLogin, onPassword, onTerms }) {
   const [usn, setUsn] = useState(() => localStorage.getItem('usn') || '');
   const [password, setPassword] = useState('');
-  const [alias, setAlias] = useState('');
+  const [alias, setAlias] = useState(() => localStorage.getItem('alias') || '');
   const [leaderboardOpt, setLeaderboardOpt] = useState(() => {
     const stored = localStorage.getItem('leaderboard_opt');
     return stored !== null ? JSON.parse(stored) : false;

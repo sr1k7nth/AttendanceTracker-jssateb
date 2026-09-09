@@ -63,7 +63,7 @@ export default function AttendanceSummary({ data }) {
       {/* Request limit */}
       {data.request_left !== undefined && (
         <p className="request-left">
-          {data.request_left} / 4 refreshes left today
+          {data.request_left > 4 ? 'Unlimited' : `${data.request_left} / 4`} refreshes left today
         </p>
       )}
 
