@@ -4,6 +4,7 @@ import { login } from '../api';
 export default function Login({ onLogin, onPassword, onTerms }) {
   const [usn, setUsn] = useState(() => localStorage.getItem('usn') || '');
   const [password, setPassword] = useState('');
+  const [alias, setAlias] = useState('');
   const [leaderboardOpt, setLeaderboardOpt] = useState(() => {
     const stored = localStorage.getItem('leaderboard_opt');
     return stored !== null ? JSON.parse(stored) : false;
@@ -19,10 +20,14 @@ export default function Login({ onLogin, onPassword, onTerms }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!usn || !password) return;
+    if (!alias.trim()) {
+      setError('Enter an alias for the leaderboard.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await login(usn, password, leaderboardOpt);
+      await login(usn, password, leaderboardOpt, alias.trim());
       onPassword(password);
       onLogin();
     } catch (err) {
@@ -70,6 +75,20 @@ export default function Login({ onLogin, onPassword, onTerms }) {
               {showPw ? 'Hide' : 'Show'}
             </button>
           </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="alias">Alias</label>
+          <input
+            id="alias"
+            type="text"
+            placeholder="Your leaderboard name"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            autoComplete="nickname"
+            maxLength={30}
+            required
+          />
         </div>
 
         <div className="checkbox-group">

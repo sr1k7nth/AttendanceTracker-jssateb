@@ -14,7 +14,7 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 
 ## 3. Data Collected
 
-- I store only: your USN, attendance summary (subjects, classes, percentages), branch, semester, and leaderboard preference.
+- I store only: your USN, alias, attendance summary (subjects, classes, percentages), branch, semester, and leaderboard preference.
 - No personal information beyond what the college portal itself displays is collected or retained.
 
 ## 4. Open Source & Transparency

@@ -22,7 +22,7 @@ export default function Terms({ onBack }) {
 
         <h3>3. Data Collected</h3>
         <ul>
-          <li>I store only: your Portal ID, attendance summary (subjects, classes, percentages), branch,
+          <li>I store only: your Portal ID, alias, attendance summary (subjects, classes, percentages), branch,
             semester, and leaderboard preference.</li>
           <li>No personal information beyond what the college portal itself displays is collected
             or retained.</li>

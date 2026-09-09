@@ -61,7 +61,10 @@ export default function Leaderboard({ myBranch, myUsn }) {
           return (
             <li key={u.usn} className={`leaderboard-row${isPinned ? ' leaderboard-me' : ''}`}>
               <span className="leaderboard-rank">{rank}</span>
-              <span className="leaderboard-usn">{u.usn}</span>
+              {/* Legacy alias fallback */}
+              <span className="leaderboard-usn" title={u.alias || 'Anonymous'}>
+                {u.alias || 'Anonymous'}
+              </span>
               <span className={`attendance-pct ${u.total_avg >= 85 ? 'high' : u.total_avg >= 75 ? 'mid' : 'low'}`}>
                 {u.total_avg}%
               </span>

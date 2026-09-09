@@ -71,6 +71,7 @@ backend/
 | Column | Type | Description |
 |--------|------|-------------|
 | `usn` | VARCHAR (PK) | Student USN |
+| `alias` | VARCHAR(30) | Leaderboard name; nullable for older accounts |
 | `summary` | JSONB | Subject-wise attendance data |
 | `absent_periods` | JSONB | Absent period details |
 | `total_avg` | FLOAT | Overall attendance percentage |
@@ -126,6 +127,11 @@ docker run -p 8000:8000 --env-file .env --network host attendance-backend
 **Important:** The root `.dockerignore` excludes `backend/.env` from the Docker build. Make sure env vars are set in Render's dashboard, not in the `.env` file.
 
 ## Database Migrations
+
+Login requires an `alias` (1–30 characters, trimmed). It is saved on each successful
+login and preserved during refresh. Older accounts display "Anonymous" until their
+next login. Run `alembic upgrade head` from `backend/` before starting the updated
+backend against an existing database; startup table creation does not add columns.
 
 ```bash
 # Create migration (auto-detects model changes)

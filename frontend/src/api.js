@@ -18,12 +18,13 @@ async function request(path, options = {}) {
   return res.json();
 }
 
-export async function login(usn, password, leaderboardOpt) {
+export async function login(usn, password, leaderboardOpt, alias) {
   const data = await request('/scraper/login', {
     method: 'POST',
     body: JSON.stringify({
       usn,
       password,
+      alias,
       leaderboard_opt: leaderboardOpt,
     }),
   });
