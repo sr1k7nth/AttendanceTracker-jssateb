@@ -177,7 +177,7 @@ function App() {
         ) : tab === 'attendance' ? (
           <AttendanceSummary data={attendance} />
         ) : (
-          <Leaderboard myBranch={attendance?.branch} />
+          <Leaderboard myBranch={attendance?.branch} myUsn={attendance?.usn} />
         )}
       </main>
 

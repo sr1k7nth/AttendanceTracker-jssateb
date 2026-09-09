@@ -39,7 +39,7 @@ export default function Login({ onLogin, onPassword, onTerms }) {
         <p>Enter your college portal credentials. Password is used once and not stored.</p>
 
         <div className="form-group">
-          <label htmlFor="usn">USN</label>
+          <label htmlFor="usn">Portal ID</label>
           <input
             id="usn"
             type="text"

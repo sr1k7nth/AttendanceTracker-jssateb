@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchLeaderboard } from '../api';
 
-export default function Leaderboard({ myBranch }) {
+export default function Leaderboard({ myBranch, myUsn }) {
   const [users, setUsers] = useState([]);
   const [sort, setSort] = useState('desc');
   const [branch, setBranch] = useState('ALL');
@@ -25,6 +25,12 @@ export default function Leaderboard({ myBranch }) {
     </div>
   );
 
+  // Pin current user to top
+  const myIndex = users.findIndex((u) => u.usn === myUsn);
+  const sorted = myIndex > 0
+    ? [users[myIndex], ...users.filter((u) => u.usn !== myUsn)]
+    : users;
+
   return (
     <div>
       <div className="leaderboard-controls">
@@ -40,7 +46,7 @@ export default function Leaderboard({ myBranch }) {
 
       <h3 className="section-title">Rankings</h3>
       <ul className="leaderboard-list">
-        {users.map((u, i) => {
+        {sorted.map((u, i) => {
           const ist = new Date(u.timestamp).toLocaleString('en-IN', {
             timeZone: 'Asia/Kolkata',
             day: 'numeric',
@@ -49,9 +55,12 @@ export default function Leaderboard({ myBranch }) {
             minute: '2-digit',
             hour12: true,
           });
+          const isMe = u.usn === myUsn;
+          const isPinned = isMe && i === 0;
+          const rank = isPinned ? myIndex + 1 : (i <= myIndex ? i : i + 1);
           return (
-            <li key={u.usn} className="leaderboard-row">
-              <span className="leaderboard-rank">{i + 1}</span>
+            <li key={u.usn} className={`leaderboard-row${isPinned ? ' leaderboard-me' : ''}`}>
+              <span className="leaderboard-rank">{rank}</span>
               <span className="leaderboard-usn">{u.usn}</span>
               <span className={`attendance-pct ${u.total_avg >= 85 ? 'high' : u.total_avg >= 75 ? 'mid' : 'low'}`}>
                 {u.total_avg}%
