@@ -13,10 +13,10 @@ export default function Terms({ onBack }) {
 
         <h3>2. Credentials & Security</h3>
         <ul>
-          <li>Your college portal password is used <strong>once</strong> per session to authenticate
-            with the portal and is <strong>never stored</strong> on any server or database.</li>
-          <li>The password exists only in your browser's session memory and is discarded immediately
-            when you close the tab or log out.</li>
+          <li>Your college portal password is sent to the backend for login and attendance refreshes.
+            The backend uses it to authenticate with the portal without saving it to a database or file.</li>
+          <li>The app keeps the password only in page memory, not browser storage. Reloading, closing
+            the tab, or logging out clears it. After reloading, refreshing attendance requires another login.</li>
           <li>I do not have access to any other college systems, emails, or internal services.</li>
         </ul>
 
@@ -74,7 +74,9 @@ export default function Terms({ onBack }) {
         <ul>
           <li>This tool must not be used to automate bulk scraping, distribute data to third parties,
             or circumvent any college systems.</li>
-          <li>Each user accesses only their own attendance data.</li>
+          <li>Detailed attendance records are accessible only to their owner. Opting into the leaderboard
+            shares your alias, attendance percentage, branch, rank, and last update time with other
+            opted-in users in your semester.</li>
         </ul>
 
         <h3>10. Changes to Terms</h3>

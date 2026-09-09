@@ -5,7 +5,7 @@ const faqItems = [
   },
   {
     q: 'Is my password stored?',
-    a: 'No. Your credentials are used once to scrape the portal and then discarded immediately. They are never saved in any database or file.',
+    a: 'Your password stays in this page’s memory for login and refreshes. The app does not save it in browser storage, a database, or a file. Reloading, closing the tab, or logging out clears it. After reloading, refreshing attendance requires another login.',
   },
   {
     q: 'What is Summary?',

@@ -41,7 +41,7 @@ export default function Login({ onLogin, onPassword, onTerms }) {
     <div className="login-page">
       <form className="login-form" onSubmit={handleSubmit}>
         <h2>Fetch Attendance</h2>
-        <p>Enter your college portal credentials. Password is used once and not stored.</p>
+        <p>Your password stays in this page's memory for login and refreshes. Reloading or logging out clears it.</p>
 
         <div className="form-group">
           <label htmlFor="usn">Portal ID</label>

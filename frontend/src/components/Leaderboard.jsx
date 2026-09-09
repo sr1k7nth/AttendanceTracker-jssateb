@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchLeaderboard } from '../api';
 
-export default function Leaderboard({ myBranch, myUsn }) {
+export default function Leaderboard({ myBranch }) {
   const [users, setUsers] = useState([]);
   const [sort, setSort] = useState('desc');
   const [branch, setBranch] = useState('ALL');
@@ -25,10 +25,10 @@ export default function Leaderboard({ myBranch, myUsn }) {
     </div>
   );
 
-  // Pin current user to top
-  const myIndex = users.findIndex((u) => u.usn === myUsn);
+  // Pin current user
+  const myIndex = users.findIndex((u) => u.is_me);
   const sorted = myIndex > 0
-    ? [users[myIndex], ...users.filter((u) => u.usn !== myUsn)]
+    ? [users[myIndex], ...users.filter((u) => !u.is_me)]
     : users;
 
   return (
@@ -55,12 +55,10 @@ export default function Leaderboard({ myBranch, myUsn }) {
             minute: '2-digit',
             hour12: true,
           });
-          const isMe = u.usn === myUsn;
-          const isPinned = isMe && i === 0;
-          const rank = isPinned ? myIndex + 1 : (i <= myIndex ? i : i + 1);
+          const isPinned = u.is_me && i === 0;
           return (
-            <li key={u.usn} className={`leaderboard-row${isPinned ? ' leaderboard-me' : ''}`}>
-              <span className="leaderboard-rank">{rank}</span>
+            <li key={u.rank} className={`leaderboard-row${isPinned ? ' leaderboard-me' : ''}`}>
+              <span className="leaderboard-rank">{u.rank}</span>
               {/* Legacy alias fallback */}
               <span className="leaderboard-usn" title={u.alias || 'Anonymous'}>
                 {u.alias || 'Anonymous'}

@@ -91,7 +91,7 @@ All API calls go through `src/api.js`:
 
 - **`loggedIn`** — derived from JWT in localStorage
 - **`attendance`** — initialized from localStorage cache, updated from API
-- **`sessionPassword`** — sessionStorage (cleared on browser close)
+- **`sessionPassword`** — page memory only; cleared on reload, tab close, or logout. Legacy sessionStorage passwords are removed on app startup. After a reload, refreshing attendance redirects to login.
 - **`theme`** — localStorage (`dark` / `light`)
 - **`termsAccepted`** — localStorage (persists across sessions)
 - **`leaderboardOpt`** — localStorage (persists across sessions)

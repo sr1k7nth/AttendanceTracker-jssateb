@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Attendance as AttendanceModel
 from ..oauth import get_current_user
-from ..schemas import AttendanceResponse
+from ..schemas import LeaderboardResponse
 from sqlalchemy import desc, asc
 
 router = APIRouter(tags=["Leaderboard"])
 
 
-@router.get("/leaderboard", response_model=list[AttendanceResponse])
+@router.get("/leaderboard", response_model=list[LeaderboardResponse])
 def leaderboard(
     db: Session = Depends(get_db),
     usn: str = Depends(get_current_user),
@@ -37,4 +37,14 @@ def leaderboard(
         query = query.filter(AttendanceModel.branch == branch)
 
     users = query.all()
-    return users
+    return [
+        LeaderboardResponse(
+            alias=user.alias,
+            total_avg=user.total_avg,
+            timestamp=user.timestamp,
+            branch=user.branch,
+            rank=rank,
+            is_me=user.usn == usn,
+        )
+        for rank, user in enumerate(users, start=1)
+    ]

@@ -8,8 +8,8 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 
 ## 2. Credentials & Security
 
-- Your college portal password is used **once** per session to authenticate with the portal and is **never stored** on any server or database.
-- The password exists only in your browser's session memory and is discarded immediately when you close the tab or log out.
+- Your college portal password is sent to the backend for login and attendance refreshes. The backend uses it to authenticate with the portal without saving it to a database or file.
+- The app keeps the password only in page memory, not browser storage. Reloading, closing the tab, or logging out clears it. After reloading, refreshing attendance requires another login.
 - I do not have access to any other college systems, emails, or internal services.
 
 ## 3. Data Collected
@@ -45,7 +45,7 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 ## 9. No Misuse
 
 - This tool must not be used to automate bulk scraping, distribute data to third parties, or circumvent any college systems.
-- Each user accesses only their own attendance data.
+- Detailed attendance records are accessible only to their owner. Opting into the leaderboard shares your alias, attendance percentage, branch, rank, and last update time with other opted-in users in your semester.
 
 ## 10. Changes to Terms
 
