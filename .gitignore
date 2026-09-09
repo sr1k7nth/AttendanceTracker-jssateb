@@ -12,3 +12,4 @@ node_modules/
 dist/
 frontend/dist/
 .envsitter/
+backend/tests/test_security.py

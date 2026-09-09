@@ -5,7 +5,7 @@ React + Vite frontend for the JSSATEB Attendance Tracker.
 ## Features
 
 - Dark/light theme toggle (persisted in localStorage)
-- Login form with USN, password, leaderboard opt-in, terms acceptance
+- Login form with USN, password, alias, leaderboard opt-in, terms acceptance
 - Loading spinner with "20-25 seconds" wait note during scraping
 - Subject-wise attendance table (#, Code, Subject, Classes, Present, %)
 - Stats grid (Overall %, Can miss 85%/75%, Must attend 85%/75%)
@@ -80,7 +80,7 @@ All API calls go through `src/api.js`:
 
 | Function | Endpoint | Method |
 |----------|----------|--------|
-| `login(usn, password, leaderboardOpt)` | `/scraper/login` | POST |
+| `login(usn, password, leaderboardOpt, alias)` | `/scraper/login` | POST |
 | `refreshAttendance(password)` | `/scraper/refresh` | POST |
 | `fetchAttendance()` | `/fetch_attendance/` | GET |
 | `fetchLeaderboard(sort, branch)` | `/leaderboard` | GET |
@@ -91,7 +91,7 @@ All API calls go through `src/api.js`:
 
 - **`loggedIn`** — derived from JWT in localStorage
 - **`attendance`** — initialized from localStorage cache, updated from API
-- **`sessionPassword`** — sessionStorage (cleared on browser close)
+- **`sessionPassword`** — page memory only; cleared on reload, tab close, or logout. Legacy sessionStorage passwords are removed on app startup. After a reload, refreshing attendance redirects to login.
 - **`theme`** — localStorage (`dark` / `light`)
 - **`termsAccepted`** — localStorage (persists across sessions)
 - **`leaderboardOpt`** — localStorage (persists across sessions)

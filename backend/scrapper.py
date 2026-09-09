@@ -147,8 +147,6 @@ def scrapper(usn: str, password: str):
                 )
                 can_miss75 = 0
 
-            page.screenshot(path="debug.png")
-
         finally:
             browser.close()
     return {

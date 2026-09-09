@@ -14,15 +14,24 @@ ADMIN_USN = "JS240955"
 
 
 def _scrape_and_cache(
-    usn: str, password: str, db: Session, leaderboard_opt: bool = False
+    usn: str,
+    password: str,
+    db: Session,
+    leaderboard_opt: bool = False,
+    alias: str | None = None,
 ):
     try:
         data = scrapper(usn, password)
-    except LoginError as e:
-        raise HTTPException(401, detail=str(e))
+    except LoginError:
+        raise HTTPException(401, detail="Invalid credentials") from None
+    except Exception:
+        # Hide sensitive scraper errors
+        raise HTTPException(502, detail="Portal unavailable. Try again later.") from None
 
     if data.get("status") == "error":
-        raise HTTPException(401, detail=data["error"])
+        raise HTTPException(401, detail="Invalid credentials")
+    if data.get("status") == "portal down":
+        raise HTTPException(502, detail="Portal unavailable. Try again later.")
 
     existing = db.query(AttendanceModel).filter(AttendanceModel.usn == usn).first()
     if existing:
@@ -36,9 +45,14 @@ def _scrape_and_cache(
         existing.timestamp = datetime.now(timezone.utc)  # type: ignore
         existing.branch = data["branch"]  # type: ignore
         existing.sem = data["sem"]  # type: ignore
+        # Preserve alias during refresh
+        if alias is not None:
+            existing.alias = alias
+            existing.leaderboard_opt = leaderboard_opt
     else:
         new_user = AttendanceModel(
             usn=usn,
+            alias=alias,
             summary=data["summary"],
             absent_periods=data["absent_periods"],
             total_avg=data["total_avg"],  # type: ignore
@@ -59,7 +73,9 @@ def _scrape_and_cache(
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    data = _scrape_and_cache(user.usn, user.password, db, user.leaderboard_opt)
+    data = _scrape_and_cache(
+        user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias
+    )
     token = create_access_token(
         {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
     )
@@ -87,7 +103,7 @@ def refresh(
             raise HTTPException(
                 429, detail="Daily scrape limit reached. Try again tomorrow."
             )
-    data = _scrape_and_cache(current_user, user_data.password, db)
+    data = _scrape_and_cache(current_user, user_data.password.get_secret_value(), db)
     if current_user != ADMIN_USN:
         user.request_left -= 1  # type: ignore
         db.commit()

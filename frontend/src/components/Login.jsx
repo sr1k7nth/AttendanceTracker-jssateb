@@ -4,6 +4,7 @@ import { login } from '../api';
 export default function Login({ onLogin, onPassword, onTerms }) {
   const [usn, setUsn] = useState(() => localStorage.getItem('usn') || '');
   const [password, setPassword] = useState('');
+  const [alias, setAlias] = useState('');
   const [leaderboardOpt, setLeaderboardOpt] = useState(() => {
     const stored = localStorage.getItem('leaderboard_opt');
     return stored !== null ? JSON.parse(stored) : false;
@@ -19,10 +20,14 @@ export default function Login({ onLogin, onPassword, onTerms }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!usn || !password) return;
+    if (!alias.trim()) {
+      setError('Enter an alias for the leaderboard.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await login(usn, password, leaderboardOpt);
+      await login(usn, password, leaderboardOpt, alias.trim());
       onPassword(password);
       onLogin();
     } catch (err) {
@@ -36,7 +41,7 @@ export default function Login({ onLogin, onPassword, onTerms }) {
     <div className="login-page">
       <form className="login-form" onSubmit={handleSubmit}>
         <h2>Fetch Attendance</h2>
-        <p>Enter your college portal credentials. Password is used once and not stored.</p>
+        <p>Your password stays in this page's memory for login and refreshes. Reloading or logging out clears it.</p>
 
         <div className="form-group">
           <label htmlFor="usn">Portal ID</label>
@@ -70,6 +75,20 @@ export default function Login({ onLogin, onPassword, onTerms }) {
               {showPw ? 'Hide' : 'Show'}
             </button>
           </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="alias">Alias</label>
+          <input
+            id="alias"
+            type="text"
+            placeholder="Your leaderboard name"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            autoComplete="nickname"
+            maxLength={30}
+            required
+          />
         </div>
 
         <div className="checkbox-group">

@@ -103,7 +103,7 @@ Attendance-Tracker/
 
 ## Security Model
 
-1. **No password storage** — credentials are used once and discarded immediately
+1. **No persistent password storage** — passwords stay in page memory for login and refreshes; reloading or logging out clears them. The backend uses them for each scrape without saving them.
 2. **JWT-based auth** — 7-day tokens, no server-side sessions
 3. **Only attendance data is scraped** — no fees, no personal info
 4. **Open source** — full codebase on GitHub, deployed directly from the repo

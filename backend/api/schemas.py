@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+from pydantic import BaseModel, ConfigDict, SecretStr, StringConstraints
 from datetime import datetime
 
 
@@ -7,12 +8,15 @@ class UserPayload(BaseModel):
 
 
 class UserScrapeRequest(BaseModel):
-    password: str
+    password: SecretStr
 
 
 class UserLogin(BaseModel):
     usn: str
-    password: str
+    password: SecretStr
+    alias: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=30)
+    ]
     leaderboard_opt: bool
 
 
@@ -46,6 +50,7 @@ class AttendanceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     usn: str
+    alias: str | None = None
     summary: list
     absent_periods: list
     total_avg: float
@@ -58,3 +63,12 @@ class AttendanceResponse(BaseModel):
     sem: int | None = None
     branch: str | None = None
     request_left: int
+
+
+class LeaderboardResponse(BaseModel):
+    alias: str | None = None
+    total_avg: float
+    timestamp: datetime
+    branch: str | None = None
+    rank: int
+    is_me: bool

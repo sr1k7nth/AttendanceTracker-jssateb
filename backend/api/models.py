@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 class Attendance(Base):
     __tablename__ = "attendance"
     usn = Column(String, primary_key=True, nullable=False)
+    alias = Column(String(30), nullable=True)
     summary = Column(JSONB)
     absent_periods = Column(JSONB)
     total_avg = Column(Float)

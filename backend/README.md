@@ -71,6 +71,7 @@ backend/
 | Column | Type | Description |
 |--------|------|-------------|
 | `usn` | VARCHAR (PK) | Student USN |
+| `alias` | VARCHAR(30) | Leaderboard name; nullable for older accounts |
 | `summary` | JSONB | Subject-wise attendance data |
 | `absent_periods` | JSONB | Absent period details |
 | `total_avg` | FLOAT | Overall attendance percentage |
@@ -127,6 +128,11 @@ docker run -p 8000:8000 --env-file .env --network host attendance-backend
 
 ## Database Migrations
 
+Login requires an `alias` (1–30 characters, trimmed). It is saved on each successful
+login and preserved during refresh. Older accounts display "Anonymous" until their
+next login. Run `alembic upgrade head` from `backend/` before starting the updated
+backend against an existing database; startup table creation does not add columns.
+
 ```bash
 # Create migration (auto-detects model changes)
 alembic revision --autogenerate -m "description"
@@ -157,7 +163,9 @@ The Playwright scraper (`scrapper.py`) handles:
 
 ## Security
 
-- **Passwords are never stored.** Credentials are used once to scrape the portal, then discarded immediately.
+- **Passwords are not persisted.** The backend uses passwords for each scrape without saving them. Request models mask passwords, validation responses omit submitted values, and scraper failures return generic errors without logging their details.
+- **Leaderboard privacy:** responses contain only alias, attendance percentage, branch, timestamp, rank, and an `is_me` flag. Portal IDs and detailed attendance records are excluded.
+- **Scraper diagnostics:** automatic screenshots are disabled. Keep Playwright debug logging, request-body logging, and tracing disabled in deployment because they can capture credentials.
 - **JWT tokens** expire after 7 days. Used to identify users and protect cached data.
 - **Only attendance data is scraped** — no fees, no personal info, no other portal data.
 - **Open source** — full codebase on GitHub, deployed directly from the repo.

@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Error as PlaywrightError, TimeoutError, sync_playwright
 
 PORTAL_URL = "https://jssateb.azurewebsites.net/Apps/Login.aspx"
 
@@ -34,11 +34,8 @@ def verify_register(usn: str, password: str):
 
         except LoginError:
             return False
+        except PlaywrightError:
+            raise RuntimeError("Portal verification failed") from None
 
         finally:
             browser.close()
-
-
-if __name__ == "__main__":
-    result = verify_register("JS240955", "Srikanth02av$")
-    print(result)

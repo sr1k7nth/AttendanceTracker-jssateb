@@ -22,7 +22,12 @@ function App() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [sessionPassword, setSessionPassword] = useState(() => sessionStorage.getItem('sessionPassword') || '');
+  const [sessionPassword, setSessionPassword] = useState('');
+
+  useEffect(() => {
+    // Clear legacy password storage
+    sessionStorage.removeItem('sessionPassword');
+  }, []);
 
   // Theme
   useEffect(() => {
@@ -163,7 +168,7 @@ function App() {
         ) : tab === 'faq' ? (
           <Faq onBack={handleFaqBack} />
         ) : !loggedIn ? (
-          <Login onLogin={handleLogin} onPassword={(pw) => { setSessionPassword(pw); sessionStorage.setItem('sessionPassword', pw); }} onTerms={() => setTab('terms')} />
+          <Login onLogin={handleLogin} onPassword={setSessionPassword} onTerms={() => setTab('terms')} />
         ) : loading ? (
           <p className="loading">Fetching your attendance...</p>
         ) : error ? (
@@ -177,7 +182,7 @@ function App() {
         ) : tab === 'attendance' ? (
           <AttendanceSummary data={attendance} />
         ) : (
-          <Leaderboard myBranch={attendance?.branch} myUsn={attendance?.usn} />
+          <Leaderboard myBranch={attendance?.branch} />
         )}
       </main>
 
