@@ -52,7 +52,7 @@ const versions = [
 export default function Changelog({ onBack, loggedIn }) {
   return (
     <div className="changelog-page">
-      <button className="back-btn" onClick={onBack}>
+      <button className="faq-back" onClick={onBack}>
         &larr; Back
       </button>
       <h2>Changelog</h2>
