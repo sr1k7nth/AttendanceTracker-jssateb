@@ -1,5 +1,5 @@
 from typing import Annotated
-from pydantic import BaseModel, ConfigDict, SecretStr, StringConstraints
+from pydantic import BaseModel, ConfigDict, SecretStr, StringConstraints, model_validator
 from datetime import datetime
 
 
@@ -16,8 +16,14 @@ class UserLogin(BaseModel):
     password: SecretStr
     alias: Annotated[
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=30)
-    ]
+    ] | None = None
     leaderboard_opt: bool
+
+    @model_validator(mode="after")
+    def check_alias_if_leaderboard(self):
+        if self.leaderboard_opt and not self.alias:
+            raise ValueError("Alias is required when joining the leaderboard")
+        return self
 
 
 class AbsentSchema(BaseModel):

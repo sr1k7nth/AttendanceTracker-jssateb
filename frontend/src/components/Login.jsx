@@ -20,7 +20,7 @@ export default function Login({ onLogin, onPassword, onTerms }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!usn || !password) return;
-    if (!alias.trim()) {
+    if (leaderboardOpt && !alias.trim()) {
       setError('Enter an alias for the leaderboard.');
       return;
     }
@@ -77,7 +77,7 @@ export default function Login({ onLogin, onPassword, onTerms }) {
           </div>
         </div>
 
-        <div className="form-group">
+        <div className={`form-group${leaderboardOpt ? '' : ' form-group-hidden'}`}>
           <label htmlFor="alias">Alias</label>
           <input
             id="alias"
@@ -87,7 +87,6 @@ export default function Login({ onLogin, onPassword, onTerms }) {
             onChange={(e) => setAlias(e.target.value)}
             autoComplete="nickname"
             maxLength={30}
-            required
           />
         </div>
 

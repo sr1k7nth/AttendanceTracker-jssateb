@@ -436,6 +436,11 @@ a:hover {
   margin-bottom: 1rem;
 }
 
+.form-group-hidden {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .form-group label {
   display: block;
   font-size: 0.75rem;
