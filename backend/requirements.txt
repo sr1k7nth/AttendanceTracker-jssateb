@@ -3,8 +3,8 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 pydantic-settings
-python-jose[cryptography]
 PyJWT
 beautifulsoup4
 lxml
 playwright
+alembic
