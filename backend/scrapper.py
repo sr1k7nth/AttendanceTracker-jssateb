@@ -160,7 +160,6 @@ def scrapper(usn: str, password: str):
         "need_to_attend75": need_to_attend75,
         "branch": branch,
         "sem": semester,
-        "last_updated": datetime.now(timezone.utc).isoformat(),
     }
 
 
