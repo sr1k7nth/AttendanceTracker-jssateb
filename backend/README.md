@@ -176,4 +176,3 @@ The Playwright scraper (`scrapper.py`) handles:
 - **Base image:** `mcr.microsoft.com/playwright/python:v1.62.0-noble`
 - **Auto-deploy:** Push to `main` triggers rebuild
 - **Database:** Render PostgreSQL (Singapore region)
-- **Monitoring:** UptimeRobot pings every 15 min to prevent spin-down
