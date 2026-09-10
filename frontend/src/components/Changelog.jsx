@@ -1,7 +1,7 @@
 const versions = [
   {
     version: 'v2.0',
-    date: 'Sep 10, 2026',
+    date: 'Sep 9-10, 2026',
     title: 'Infrastructure Upgrade',
     changes: [
       'Backend migrated from Render to AWS EC2 (faster response, no cold start spin-down)',
@@ -11,7 +11,7 @@ const versions = [
   },
   {
     version: 'v1.2',
-    date: 'Sep 10, 2026',
+    date: 'Sep 8-9, 2026',
     title: 'Leaderboard Identity',
     changes: [
       'Alias support for leaderboard (optional, required when opted in)',
@@ -23,7 +23,7 @@ const versions = [
   },
   {
     version: 'v1.1',
-    date: 'Sep 10, 2026',
+    date: 'Sep 6-7, 2026',
     title: 'Polish & UX',
     changes: [
       'FAQ page with common questions',
@@ -36,7 +36,7 @@ const versions = [
   },
   {
     version: 'v1.0',
-    date: 'Sep 10, 2026',
+    date: 'Sep 5-6, 2026',
     title: 'Initial Release',
     changes: [
       'Login with college portal credentials',
