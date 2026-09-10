@@ -26,7 +26,9 @@ def _scrape_and_cache(
         raise HTTPException(401, detail="Invalid credentials") from None
     except Exception:
         # Hide sensitive scraper errors
-        raise HTTPException(502, detail="Portal unavailable. Try again later.") from None
+        raise HTTPException(
+            502, detail="Portal unavailable. Try again later."
+        ) from None
 
     if data.get("status") == "error":
         raise HTTPException(401, detail="Invalid credentials")
@@ -45,10 +47,9 @@ def _scrape_and_cache(
         existing.timestamp = datetime.now(timezone.utc)  # type: ignore
         existing.branch = data["branch"]  # type: ignore
         existing.sem = data["sem"]  # type: ignore
-        # Preserve alias during refresh
+        existing.leaderboard_opt = leaderboard_opt
         if alias is not None:
             existing.alias = alias
-            existing.leaderboard_opt = leaderboard_opt
     else:
         new_user = AttendanceModel(
             usn=usn,
@@ -73,9 +74,26 @@ def _scrape_and_cache(
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
+    existing = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
+    if existing and user.usn != ADMIN_USN:
+        age_minutes = (
+            datetime.now(timezone.utc) - existing.timestamp
+        ).total_seconds() / 60
+        if age_minutes < 120:
+            existing.leaderboard_opt = user.leaderboard_opt
+            if user.alias is not None:
+                existing.alias = user.alias
+            db.commit()
+            token = create_access_token(
+                {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
+            )
+            return {"token": token, "data": existing}
     data = _scrape_and_cache(
         user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias
     )
+    if existing and user.usn != ADMIN_USN:
+        existing.request_left -= 1
+        db.commit()
     token = create_access_token(
         {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
     )

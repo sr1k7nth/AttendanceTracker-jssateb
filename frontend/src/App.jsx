@@ -6,6 +6,7 @@ import Leaderboard from './components/Leaderboard';
 import Faq from './components/Faq';
 import BetaBanner from './components/BetaBanner';
 import Terms from './components/Terms';
+import Changelog from './components/Changelog';
 import './index.css';
 
 const FEEDBACK_URL = 'https://forms.gle/RW7jREYrceoacjxY9';
@@ -148,6 +149,12 @@ function App() {
               >
                 Terms
               </button>
+              <button
+                className={tab === 'changelog' ? 'active' : ''}
+                onClick={() => setTab('changelog')}
+              >
+                Changelog
+              </button>
             </nav>
             {tab === 'attendance' && (
               <button
@@ -163,7 +170,9 @@ function App() {
       </header>
 
       <main className="app-content">
-        {tab === 'terms' ? (
+        {tab === 'changelog' ? (
+          <Changelog onBack={() => { setTab('attendance'); window.scrollTo(0, 0); }} loggedIn={loggedIn} />
+        ) : tab === 'terms' ? (
           <Terms onBack={() => { setTab(loggedIn ? 'attendance' : 'attendance'); window.scrollTo(0, 0); }} />
         ) : tab === 'faq' ? (
           <Faq onBack={handleFaqBack} />
@@ -190,6 +199,10 @@ function App() {
         <div className="footer-links">
           <button className="faq-link" onClick={() => { setTab('faq'); if (!loggedIn) window.scrollTo(0, 0); }}>
             FAQ
+          </button>
+          <span className="footer-sep">·</span>
+          <button className="faq-link" onClick={() => { setTab('changelog'); if (!loggedIn) window.scrollTo(0, 0); }}>
+            Changelog
           </button>
           <span className="footer-sep">·</span>
           <a

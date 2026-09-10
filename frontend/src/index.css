@@ -97,6 +97,74 @@
 }
 
 /* ========================================
+   Changelog
+   ======================================== */
+
+.changelog-page h2 {
+  font-size: 1.56rem;
+  color: var(--text-bright);
+  margin-bottom: 1.25rem;
+}
+
+.changelog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.changelog-entry {
+  border-left: 2px solid var(--green);
+  padding-left: 1rem;
+}
+
+.changelog-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
+}
+
+.changelog-version {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--green);
+  font-family: var(--font-mono);
+}
+
+.changelog-date {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.changelog-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 0.4rem;
+}
+
+.changelog-changes {
+  list-style: none;
+  padding: 0;
+}
+
+.changelog-changes li {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.changelog-changes li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: bold;
+}
+
+/* ========================================
    Beta Banner
    ======================================== */
 
@@ -1171,7 +1239,8 @@ a:hover {
   }
 
   .leaderboard-branch {
-    display: none;
+    font-size: 0.65rem;
+    min-width: auto;
   }
 }
 
