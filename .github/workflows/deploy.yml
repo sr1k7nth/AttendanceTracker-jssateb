@@ -1,0 +1,25 @@
+name: Auto Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/AttendanceTracker-jssateb
+            git pull origin main
+            source venv/bin/activate
+            cd backend
+            pip install -r requirements.txt
+            PYTHONPATH=. /home/ubuntu/AttendanceTracker-jssateb/venv/bin/alembic upgrade head
+            sudo systemctl restart fastapi
