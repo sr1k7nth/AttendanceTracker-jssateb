@@ -107,4 +107,5 @@ def refresh(
     if current_user != ADMIN_USN:
         user.request_left -= 1  # type: ignore
         db.commit()
+    db.refresh(user)
     return user
