@@ -24,7 +24,7 @@ export async function login(usn, password, leaderboardOpt, alias) {
     body: JSON.stringify({
       usn,
       password,
-      alias,
+      alias: alias || null,
       leaderboard_opt: leaderboardOpt,
     }),
   });
