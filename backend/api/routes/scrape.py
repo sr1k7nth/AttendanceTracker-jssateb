@@ -76,9 +76,12 @@ def _scrape_and_cache(
 def login(user: UserLogin, db: Session = Depends(get_db)):
     existing = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
     if existing and user.usn != ADMIN_USN:
-        age_minutes = (
-            datetime.now(timezone.utc) - existing.timestamp
-        ).total_seconds() / 60
+        # Handle both timezone-aware and naive timestamps from DB
+        ts = existing.timestamp
+        now = datetime.now(timezone.utc)
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        age_minutes = (now - ts).total_seconds() / 60
         if age_minutes < 120:
             existing.leaderboard_opt = user.leaderboard_opt
             if user.alias is not None:
@@ -91,9 +94,12 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     data = _scrape_and_cache(
         user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias
     )
-    if existing and user.usn != ADMIN_USN:
-        existing.request_left -= 1
-        db.commit()
+    # Re-query after _scrape_and_cache committed (the old `existing` is expired)
+    if user.usn != ADMIN_USN:
+        user_obj = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
+        if user_obj and user_obj.request_left is not None and user_obj.request_left > 0:
+            user_obj.request_left -= 1
+            db.commit()
     token = create_access_token(
         {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
     )
@@ -112,9 +118,15 @@ def refresh(
         raise HTTPException(status_code=401, detail="Register/Login first")
     # Admin bypass — no rate limit or TTL check
     if current_user != ADMIN_USN:
-        if user.timestamp.date() != datetime.now(timezone.utc).date():
+        # Handle both timezone-aware and naive timestamps from DB
+        ts = user.timestamp
+        now = datetime.now(timezone.utc)
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if ts.date() != now.date():
             user.request_left = 4  # type: ignore
-        age_minutes = (datetime.now(timezone.utc) - user.timestamp).total_seconds() / 60
+            db.commit()
+        age_minutes = (now - ts).total_seconds() / 60
         if age_minutes < 120:
             return user
         if user.request_left <= 0:  # type: ignore
@@ -123,7 +135,10 @@ def refresh(
             )
     data = _scrape_and_cache(current_user, user_data.password.get_secret_value(), db)
     if current_user != ADMIN_USN:
-        user.request_left -= 1  # type: ignore
-        db.commit()
+        # Re-query after _scrape_and_cache committed (old `user` is expired)
+        user = db.query(AttendanceModel).filter(AttendanceModel.usn == current_user).first()
+        if user and user.request_left is not None and user.request_left > 0:
+            user.request_left -= 1  # type: ignore
+            db.commit()
     db.refresh(user)
     return user
