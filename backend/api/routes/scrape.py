@@ -13,6 +13,16 @@ router = APIRouter(prefix="/scraper", tags=["Scraper"])
 ADMIN_USN = "JS240955"
 
 
+def _reset_if_new_day(user):
+    """Reset request_left to 4 if the user's last scrape was yesterday."""
+    ts = user.timestamp
+    now = datetime.now(timezone.utc)
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    if ts.date() != now.date():
+        user.request_left = 4
+
+
 def _scrape_and_cache(
     usn: str,
     password: str,
@@ -97,9 +107,11 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     # Re-query after _scrape_and_cache committed (the old `existing` is expired)
     if user.usn != ADMIN_USN:
         user_obj = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
-        if user_obj and user_obj.request_left is not None and user_obj.request_left > 0:
-            user_obj.request_left -= 1
-            db.commit()
+        if user_obj:
+            _reset_if_new_day(user_obj)
+            if user_obj.request_left is not None and user_obj.request_left > 0:
+                user_obj.request_left -= 1
+                db.commit()
     token = create_access_token(
         {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
     )
@@ -118,14 +130,12 @@ def refresh(
         raise HTTPException(status_code=401, detail="Register/Login first")
     # Admin bypass — no rate limit or TTL check
     if current_user != ADMIN_USN:
+        _reset_if_new_day(user)
         # Handle both timezone-aware and naive timestamps from DB
         ts = user.timestamp
         now = datetime.now(timezone.utc)
         if ts.tzinfo is None:
             ts = ts.replace(tzinfo=timezone.utc)
-        if ts.date() != now.date():
-            user.request_left = 4  # type: ignore
-            db.commit()
         age_minutes = (now - ts).total_seconds() / 60
         if age_minutes < 120:
             return user
@@ -137,8 +147,10 @@ def refresh(
     if current_user != ADMIN_USN:
         # Re-query after _scrape_and_cache committed (old `user` is expired)
         user = db.query(AttendanceModel).filter(AttendanceModel.usn == current_user).first()
-        if user and user.request_left is not None and user.request_left > 0:
-            user.request_left -= 1  # type: ignore
-            db.commit()
+        if user:
+            _reset_if_new_day(user)
+            if user.request_left is not None and user.request_left > 0:
+                user.request_left -= 1  # type: ignore
+                db.commit()
     db.refresh(user)
     return user

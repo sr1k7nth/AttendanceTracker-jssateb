@@ -2,7 +2,7 @@
 
 A web app that helps JSSATEB students check their attendance without logging into the college ERP portal every time.
 
-**Live:** [jatracker.foo.ng](https://jatracker.foo.ng) · **Backend:** [attendance-backend-8gyf.onrender.com](https://attendance-backend-8gyf.onrender.com)
+**Live:** [jatracker.foo.ng](https://jatracker.foo.ng)
 
 ## Why This Was Built
 
