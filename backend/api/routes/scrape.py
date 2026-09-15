@@ -86,7 +86,14 @@ def _scrape_and_cache(
 def login(user: UserLogin, db: Session = Depends(get_db)):
     existing = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
     if existing and user.usn != ADMIN_USN:
-        # Handle both timezone-aware and naive timestamps from DB
+        _reset_if_new_day(existing)
+        # Out of requests → return cached data, no scrape
+        if existing.request_left is not None and existing.request_left <= 0:
+            token = create_access_token(
+                {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
+            )
+            return {"token": token, "data": existing}
+        # Cache still fresh (<2hrs) → return cached data, no scrape
         ts = existing.timestamp
         now = datetime.now(timezone.utc)
         if ts.tzinfo is None:
@@ -104,7 +111,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     data = _scrape_and_cache(
         user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias
     )
-    # Re-query after _scrape_and_cache committed (the old `existing` is expired)
+    # Decrement request_left for non-admin users
     if user.usn != ADMIN_USN:
         user_obj = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
         if user_obj:
