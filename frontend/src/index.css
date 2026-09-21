@@ -1058,6 +1058,12 @@ a:hover {
   min-width: 3rem;
 }
 
+.absent-date {
+  color: var(--text-dim);
+  min-width: 5rem;
+  font-size: 0.8rem;
+}
+
 .absent-course {
   flex: 1;
   color: var(--text);

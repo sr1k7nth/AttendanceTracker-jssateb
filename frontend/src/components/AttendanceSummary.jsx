@@ -138,6 +138,7 @@ export default function AttendanceSummary({ data }) {
             {data.absent_periods.map((a, i) => (
               <li key={i} className="absent-row">
                 <span className="absent-day">{a.day}</span>
+                <span className="absent-date">{a.date}</span>
                 <span className="absent-course" title={a.course}>
                   {a.course}
                 </span>
