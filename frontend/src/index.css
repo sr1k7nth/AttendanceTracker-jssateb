@@ -1,38 +1,38 @@
 /* ========================================
    Attendance Summary — Global Styles
-   Warm editorial, dark/light theme
+   Cool monochrome dark / light, slate blue accent
    ======================================== */
 
 :root {
-  /* Dark Mode (default) */
-  --bg: #131310;
-  --bg-surface: #1a1a16;
-  --bg-hover: #22221d;
-  --border: #30302a;
-  --text: #d8c8a8;
-  --text-bright: #efe4cc;
-  --text-dim: #9a8e78;
+  /* Dark Mode (default) — cool monochrome + slate blue */
+  --bg: #0e0e0e;
+  --bg-surface: #171717;
+  --bg-hover: #1f1f1f;
+  --border: #2c2c2c;
+  --text: #c5c5c0;
+  --text-bright: #f0f0ec;
+  --text-dim: #8a8a85;
   --green: #8ab860;
   --red: #e06050;
   --yellow: #d8b050;
-  --blue: #7eb3d8;
+  --blue: #6e84a8;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
 }
 
 [data-theme="light"] {
-  --bg: #f5f0e8;
-  --bg-surface: #ebe5da;
-  --bg-hover: #e0d8cc;
-  --border: #d0c8b8;
-  --text: #4a4030;
-  --text-bright: #2a2018;
-  --text-dim: #8a7e68;
+  --bg: #f4f4f2;
+  --bg-surface: #eaeae7;
+  --bg-hover: #e0e0dc;
+  --border: #d0d0cb;
+  --text: #3a3a36;
+  --text-bright: #1a1a18;
+  --text-dim: #7a7a74;
   --green: #3a7a18;
   --red: #d03020;
   --yellow: #907018;
-  --blue: #2f7ab8;
+  --blue: #4a6fa5;
 }
 
 /* ========================================
@@ -893,6 +893,18 @@ a:hover {
 .stat-overall {
   text-align: center;
   padding: 1.25rem 1rem;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.stat-overall .stat-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-overall .stat-value.high,
+.stat-overall .stat-value.mid,
+.stat-overall .stat-value.low {
+  color: #f0f0ec;
 }
 
 .stat-row {
