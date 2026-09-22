@@ -8,6 +8,7 @@ const versions = [
       'Nav menu button (☰) — FAQ, Terms, Changelog tucked out of the navbar',
       'Leaderboard pagination — 10 users per page with Prev/Next',
       'JATracker branding — new navbar title, pastel blue accent on landing',
+      'Stats restructured — Overall on top, Can miss / Need to attend each in one row',
       'Custom target section scaled up for easier tapping',
       'Darker theme background (#131310) with matching surfaces',
     ],

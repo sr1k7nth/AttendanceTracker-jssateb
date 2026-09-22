@@ -876,18 +876,11 @@ a:hover {
    Stats Grid
    ======================================== */
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.stats {
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 2rem;
-}
-
-@media (min-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-  }
 }
 
 .stat-card {
@@ -895,6 +888,34 @@ a:hover {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1rem;
+}
+
+.stat-overall {
+  text-align: center;
+  padding: 1.25rem 1rem;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-row .stat-label {
+  margin-bottom: 0;
+}
+
+.stat-row-values {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.stat-sub {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  margin-right: 0.5rem;
 }
 
 .stat-label {
@@ -912,9 +933,25 @@ a:hover {
   font-variant-numeric: tabular-nums;
 }
 
+.stat-row .stat-value {
+  font-size: 1.6rem;
+}
+
+.stat-overall .stat-value {
+  font-size: 2.5rem;
+}
+
 @media (min-width: 1024px) {
   .stat-value {
     font-size: 2rem;
+  }
+
+  .stat-row .stat-value {
+    font-size: 2.3rem;
+  }
+
+  .stat-overall .stat-value {
+    font-size: 3rem;
   }
 }
 
@@ -1384,6 +1421,14 @@ a:hover {
 
   .stat-value {
     font-size: 1.3rem;
+  }
+
+  .stat-row .stat-value {
+    font-size: 1.6rem;
+  }
+
+  .stat-overall .stat-value {
+    font-size: 2.25rem;
   }
 
   .leaderboard-controls {

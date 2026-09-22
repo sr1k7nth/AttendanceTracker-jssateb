@@ -34,29 +34,31 @@ export default function AttendanceSummary({ data }) {
 
   return (
     <div>
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card">
+      {/* Stats */}
+      <div className="stats">
+        <div className="stat-card stat-overall">
           <div className="stat-label">Overall</div>
           <div className={`stat-value ${pctColor(data.total_avg + '%')}`}>
             {data.total_avg}%
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Can miss (85%)</div>
-          <div className="stat-value green">{data.can_miss85}</div>
+        <div className="stat-card stat-row">
+          <div className="stat-label">Can miss</div>
+          <div className="stat-row-values">
+            <span className="stat-value green">{data.can_miss85}</span>
+            <span className="stat-sub">at 85%</span>
+            <span className="stat-value yellow">{data.can_miss75}</span>
+            <span className="stat-sub">at 75%</span>
+          </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Can miss (75%)</div>
-          <div className="stat-value yellow">{data.can_miss75}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Must attend (85%)</div>
-          <div className="stat-value red">{data.need_to_attend85}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Must attend (75%)</div>
-          <div className="stat-value red">{data.need_to_attend75}</div>
+        <div className="stat-card stat-row">
+          <div className="stat-label">Need to attend</div>
+          <div className="stat-row-values">
+            <span className="stat-value red">{data.need_to_attend85}</span>
+            <span className="stat-sub">at 85%</span>
+            <span className="stat-value red">{data.need_to_attend75}</span>
+            <span className="stat-sub">at 75%</span>
+          </div>
         </div>
       </div>
 
