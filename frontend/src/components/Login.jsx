@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { login } from '../api';
 
-export default function Login({ onLogin, onPassword, onTerms }) {
+export default function Login({ onLogin, onPassword, onTerms, onBack }) {
   const [usn, setUsn] = useState(() => localStorage.getItem('usn') || '');
   const [password, setPassword] = useState('');
   const [alias, setAlias] = useState(() => localStorage.getItem('alias') || '');
@@ -40,8 +40,13 @@ export default function Login({ onLogin, onPassword, onTerms }) {
   return (
     <div className="login-page">
       <form className="login-form" onSubmit={handleSubmit}>
+        {onBack && (
+          <button type="button" className="faq-back login-back" onClick={onBack}>
+            &larr; Home
+          </button>
+        )}
         <h2>Fetch Attendance</h2>
-        <p>Your password stays in this page's memory for login and refreshes. Reloading or logging out clears it.</p>
+        <p>Your password isn't being saved.</p>
 
         <div className="form-group">
           <label htmlFor="usn">Portal ID</label>

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getToken, fetchAttendance, refreshAttendance, logout } from './api';
 import Login from './components/Login';
+import Landing from './components/Landing';
 import AttendanceSummary from './components/AttendanceSummary';
 import Leaderboard from './components/Leaderboard';
 import Faq from './components/Faq';
@@ -10,6 +11,8 @@ import Changelog from './components/Changelog';
 import './index.css';
 
 const FEEDBACK_URL = 'https://forms.gle/RW7jREYrceoacjxY9';
+const MENU_ITEMS = ['faq', 'terms', 'changelog'];
+const MENU_LABELS = { faq: 'FAQ', terms: 'Terms', changelog: 'Changelog' };
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!getToken());
@@ -24,11 +27,27 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sessionPassword, setSessionPassword] = useState('');
+  // Returning users (usn in localStorage) skip the landing page
+  const [showLogin, setShowLogin] = useState(() => !!localStorage.getItem('usn'));
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     // Clear legacy password storage
     sessionStorage.removeItem('sessionPassword');
   }, []);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   // Theme
   useEffect(() => {
@@ -62,6 +81,7 @@ function App() {
 
   function handleLogin() {
     setLoggedIn(true);
+    setShowLogin(false);
     setTab('attendance');
   }
 
@@ -73,6 +93,7 @@ function App() {
     setSessionPassword('');
     sessionStorage.removeItem('sessionPassword');
     setTab('attendance');
+    setShowLogin(false);
   }
 
   function handleRefresh() {
@@ -110,7 +131,7 @@ function App() {
       <BetaBanner />
       <header className="header">
         <div className="header-top">
-          <h1>Attendance</h1>
+          <h1>JATracker</h1>
           <div className="header-actions">
             <button className="theme-toggle" onClick={toggleTheme}>
               {theme === 'dark' ? 'Light' : 'Dark'}
@@ -137,24 +158,33 @@ function App() {
               >
                 Leaderboard
               </button>
-              <button
-                className={tab === 'faq' ? 'active' : ''}
-                onClick={() => setTab('faq')}
-              >
-                FAQ
-              </button>
-              <button
-                className={tab === 'terms' ? 'active' : ''}
-                onClick={() => setTab('terms')}
-              >
-                Terms
-              </button>
-              <button
-                className={tab === 'changelog' ? 'active' : ''}
-                onClick={() => setTab('changelog')}
-              >
-                Changelog
-              </button>
+              <div className="nav-menu" ref={menuRef}>
+                <button
+                  className={`nav-menu-trigger${MENU_ITEMS.includes(tab) ? ' active' : ''}`}
+                  onClick={() => setMenuOpen((o) => !o)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                >
+                  {menuOpen ? '✕' : '☰'}
+                </button>
+                {menuOpen && (
+                  <div className="nav-menu-dropdown" role="menu">
+                    {MENU_ITEMS.map((item) => (
+                      <button
+                        key={item}
+                        role="menuitem"
+                        className={tab === item ? 'active' : ''}
+                        onClick={() => {
+                          setTab(item);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        {MENU_LABELS[item]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </nav>
             {tab === 'attendance' && (
               <button
@@ -177,7 +207,16 @@ function App() {
         ) : tab === 'faq' ? (
           <Faq onBack={handleFaqBack} />
         ) : !loggedIn ? (
-          <Login onLogin={handleLogin} onPassword={setSessionPassword} onTerms={() => setTab('terms')} />
+          showLogin ? (
+            <Login
+              onLogin={handleLogin}
+              onPassword={setSessionPassword}
+              onTerms={() => navigate('terms')}
+              onBack={() => setShowLogin(false)}
+            />
+          ) : (
+            <Landing onLogin={() => setShowLogin(true)} />
+          )
         ) : loading ? (
           <p className="loading">Fetching your attendance...</p>
         ) : error ? (

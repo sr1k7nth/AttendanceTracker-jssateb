@@ -47,7 +47,7 @@ frontend/
 ├── public/
 │   └── favicon.svg          # Green checkmark on dark bg
 ├── index.html
-├── vite.config.js           # Dev proxy to Render backend
+├── vite.config.js           # Dev proxy to API backend
 └── package.json
 ```
 
@@ -64,7 +64,7 @@ npm install
 npm run dev
 ```
 
-The Vite dev server runs on `http://localhost:5173` and proxies API calls (`/scraper/*`, `/fetch_attendance/*`, `/leaderboard/*`) to `https://attendance-backend-8gyf.onrender.com`.
+The Vite dev server runs on `http://localhost:5173` and proxies API calls (`/scraper/*`, `/fetch_attendance/*`, `/leaderboard/*`) to `https://jatracker-api.foo.ng`.
 
 ## Build
 
@@ -100,6 +100,6 @@ All API calls go through `src/api.js`:
 
 - **Platform:** Vercel
 - **Root directory:** `frontend`
-- **Env var:** `VITE_API_URL=https://attendance-backend-8gyf.onrender.com`
+- **Env var:** `VITE_API_URL=https://jatracker-api.foo.ng`
 - **Custom domain:** `jatracker.foo.ng` via foo-ng
 - **Auto-deploy:** Push to `main` triggers rebuild

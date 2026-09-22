@@ -1,13 +1,15 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+const API_URL = 'https://jatracker-api.foo.ng';
+
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/scraper': 'https://attendance-backend-8gyf.onrender.com',
-      '/fetch_attendance': 'https://attendance-backend-8gyf.onrender.com',
-      '/leaderboard': 'https://attendance-backend-8gyf.onrender.com',
+      '/scraper': API_URL,
+      '/fetch_attendance': API_URL,
+      '/leaderboard': API_URL,
     },
   },
 })

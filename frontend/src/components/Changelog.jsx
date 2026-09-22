@@ -1,5 +1,19 @@
 const versions = [
   {
+    version: 'v2.1',
+    date: 'Sep 22, 2026',
+    title: 'Landing Page & Polish',
+    changes: [
+      'Landing page with tagline and Login button (returning users skip straight to the form)',
+      'Nav menu button (☰) — FAQ, Terms, Changelog tucked out of the navbar',
+      'Leaderboard pagination — 10 users per page with Prev/Next',
+      'JATracker branding — new navbar title, pastel blue accent on landing',
+      'Custom target section scaled up for easier tapping',
+      'New API domain: jatracker-api.foo.ng',
+      'Darker theme background (#131310) with matching surfaces',
+    ],
+  },
+  {
     version: 'v2.0',
     date: 'Sep 9-10, 2026',
     title: 'Infrastructure Upgrade',

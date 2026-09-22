@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { fetchLeaderboard } from '../api';
 
+const PAGE_SIZE = 10;
+
 export default function Leaderboard({ myBranch }) {
   const [users, setUsers] = useState([]);
   const [sort, setSort] = useState('desc');
   const [branch, setBranch] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     setLoading(true);
     setError('');
+    setPage(1);
     fetchLeaderboard(sort, branch)
       .then(setUsers)
       .catch((err) => setError(err.message))
@@ -31,6 +35,11 @@ export default function Leaderboard({ myBranch }) {
     ? [users[myIndex], ...users.filter((u) => !u.is_me)]
     : users;
 
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageUsers = sorted.slice(start, start + PAGE_SIZE);
+
   return (
     <div>
       <div className="leaderboard-controls">
@@ -46,7 +55,7 @@ export default function Leaderboard({ myBranch }) {
 
       <h3 className="section-title">Rankings</h3>
       <ul className="leaderboard-list">
-        {sorted.map((u, i) => {
+        {pageUsers.map((u, i) => {
           const ist = new Date(u.timestamp).toLocaleString('en-IN', {
             timeZone: 'Asia/Kolkata',
             day: 'numeric',
@@ -55,7 +64,7 @@ export default function Leaderboard({ myBranch }) {
             minute: '2-digit',
             hour12: true,
           });
-          const isPinned = u.is_me && i === 0;
+          const isPinned = u.is_me && start + i === 0;
           return (
             <li key={u.rank} className={`leaderboard-row${isPinned ? ' leaderboard-me' : ''}`}>
               <span className="leaderboard-rank">{u.rank}</span>
@@ -74,6 +83,28 @@ export default function Leaderboard({ myBranch }) {
           );
         })}
       </ul>
+
+      {totalPages > 1 && (
+        <div className="leaderboard-pager">
+          <button
+            className="pager-btn"
+            disabled={currentPage <= 1}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            &larr; Prev
+          </button>
+          <span className="pager-status">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            className="pager-btn"
+            disabled={currentPage >= totalPages}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            Next &rarr;
+          </button>
+        </div>
+      )}
     </div>
   );
 }
