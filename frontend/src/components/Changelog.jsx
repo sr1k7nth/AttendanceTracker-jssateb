@@ -9,7 +9,6 @@ const versions = [
       'Leaderboard pagination — 10 users per page with Prev/Next',
       'JATracker branding — new navbar title, pastel blue accent on landing',
       'Custom target section scaled up for easier tapping',
-      'New API domain: jatracker-api.foo.ng',
       'Darker theme background (#131310) with matching surfaces',
     ],
   },
