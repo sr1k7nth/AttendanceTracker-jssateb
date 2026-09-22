@@ -16,7 +16,15 @@ export default function Leaderboard({ myBranch }) {
     setError('');
     setPage(1);
     fetchLeaderboard(sort, branch)
-      .then(setUsers)
+      .then((data) => {
+        const avgDir = sort === 'desc' ? -1 : 1;
+        const ordered = [...data].sort((a, b) => {
+          const t = new Date(b.timestamp) - new Date(a.timestamp);
+          if (t !== 0) return t;
+          return (a.total_avg - b.total_avg) * avgDir;
+        });
+        setUsers(ordered.map((u, i) => ({ ...u, rank: i + 1 })));
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [sort, branch]);
