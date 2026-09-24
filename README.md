@@ -174,7 +174,7 @@ docker run -p 8000:8000 --env-file .env --network host attendance-backend
 - Scraping depends on the college portal's HTML structure — if they change it, the scraper breaks
 - Attendance data is only as fresh as the last scrape
 - The college portal's availability affects the app's functionality
-- Free tier hosting spins down after inactivity (~50s cold start)
+- Free tier hosting spins down after inactivity (~50s cold start),Not now since it is a virtual server
 - Render free tier PostgreSQL expires after 90 days
 
 ## License
