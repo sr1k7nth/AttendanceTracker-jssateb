@@ -37,7 +37,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 | Layer | Tech | Hosting |
 |-------|------|---------|
 | Backend | FastAPI + Playwright + SQLAlchemy | Render (Docker) |
-| Database | PostgreSQL 18 | Render (managed) |
+| Database | PostgreSQL 18 | AWS EC2|
 | Frontend | React + Vite | Vercel |
 | Auth | JWT (PyJWT, 7-day tokens) | — |
 | Migrations | Alembic | — |
