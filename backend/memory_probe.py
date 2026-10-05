@@ -125,10 +125,12 @@ def measure_scrape_peak_rss(usn: str, password: str) -> ScrapeMeasurement:
     t0 = time.perf_counter()
 
     # Live progress: print only on ~50MB jumps so the log shows Chromium
-    # filling up without one line per 100ms tick. The first sample always
-    # prints, so there's never a completely silent probe.
+    # filling up without one line per 100ms tick. The counter starts AT the
+    # baseline rather than forcing the first sample to print, because that
+    # first sample is taken before Chromium exists — printing it would label
+    # the Python process itself as "Chromium RSS".
     PRINT_EVERY_KB = 50 * 1024
-    last_printed_kb = baseline_kb - PRINT_EVERY_KB  # force first sample to print
+    last_printed_kb = baseline_kb
 
     def sampler():
         nonlocal last_printed_kb
@@ -149,7 +151,11 @@ def measure_scrape_peak_rss(usn: str, password: str) -> ScrapeMeasurement:
                     )
             stop.wait(0.1)
 
-    print("[probe] launching one Chromium to measure its RAM cost...", flush=True)
+    print(
+        f"[probe] launching one Chromium to measure its RAM cost "
+        f"(python baseline {baseline_kb / 1024:.0f} MB)...",
+        flush=True,
+    )
     thread = threading.Thread(target=sampler, daemon=True)
     thread.start()
     try:
