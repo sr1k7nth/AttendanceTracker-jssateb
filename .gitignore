@@ -20,6 +20,7 @@ backend/tests/test_security.py
 backend/uploads/
 !frontend/public/upi-qr.jpg
 .codegraph/
+AGENTS.md
 backend/timing_probe.py
 backend/seed_donations.py
 backend/home.html
