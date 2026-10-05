@@ -3,9 +3,7 @@ name: Auto Deploy Backend
 on:
   push:
     branches:
-      # Deploys this branch directly instead of main. When the work is merged,
-      # flip this ref AND the fetch/checkout/pull refs below back to `main`.
-      - scrape-http-no-limits
+      - main
 
 jobs:
   deploy:
@@ -18,11 +16,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set -e
             cd /home/ubuntu/AttendanceTracker-jssateb
-            git fetch origin
-            git checkout scrape-http-no-limits
-            git pull --ff-only origin scrape-http-no-limits
+            git pull origin main
             source venv/bin/activate
             cd backend
             pip install -r requirements.txt
