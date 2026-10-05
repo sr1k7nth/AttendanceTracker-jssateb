@@ -1,6 +1,15 @@
 from typing import Annotated
-from pydantic import BaseModel, ConfigDict, SecretStr, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    StringConstraints,
+    model_validator,
+)
 from datetime import datetime
+
+from .config import settings
 
 
 class UserPayload(BaseModel):
@@ -69,6 +78,20 @@ class AttendanceResponse(BaseModel):
     sem: int | None = None
     branch: str | None = None
     request_left: int
+    timetable: dict | None = None
+    is_supporter: bool = False
+    # Daily cap for this user — computed server-side so the frontend never
+    # hardcodes the quota (FREE vs SUPPORTER).
+    request_cap: int = 0
+
+    @model_validator(mode="after")
+    def _fill_request_cap(self) -> "AttendanceResponse":
+        self.request_cap = (
+            settings.SUPPORTER_REQUESTS_PER_DAY
+            if self.is_supporter
+            else settings.FREE_REQUESTS_PER_DAY
+        )
+        return self
 
 
 class LeaderboardResponse(BaseModel):
@@ -78,3 +101,42 @@ class LeaderboardResponse(BaseModel):
     branch: str | None = None
     rank: int
     is_me: bool
+    is_supporter: bool = False
+
+
+# --- donations / supporters -------------------------------------------------
+
+
+class SupporterOut(BaseModel):
+    """One row of the public supporters wall (never exposes usn/amount)."""
+
+    name: str
+    message: str | None = None
+    created_at: datetime
+
+
+class ProgressOut(BaseModel):
+    month_raised: int
+    goal: int
+    month_count: int
+    lifetime_raised: int
+    lifetime_count: int
+
+
+class DonationPendingOut(BaseModel):
+    """Admin queue view — includes the account the perk will land on."""
+
+    id: int
+    usn: str
+    name: str
+    message: str | None = None
+    admin_note: str | None = None
+    amount: int
+    anonymous: bool
+    created_at: datetime
+    screenshot_url: str
+
+
+class ApproveRequest(BaseModel):
+    # None = keep the donor-entered amount; set it to fix a typo before approving
+    amount: int | None = Field(default=None, ge=1, le=10000)

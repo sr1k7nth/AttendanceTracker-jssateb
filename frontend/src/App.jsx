@@ -8,11 +8,20 @@ import Faq from './components/Faq';
 import BetaBanner from './components/BetaBanner';
 import Terms from './components/Terms';
 import Changelog from './components/Changelog';
+import Support from './components/Support';
+import Supporters from './components/Supporters';
+import DonationPopup from './components/DonationPopup';
+import AdminPanel from './components/AdminPanel';
 import './index.css';
 
 const FEEDBACK_URL = 'https://forms.gle/RW7jREYrceoacjxY9';
-const MENU_ITEMS = ['faq', 'terms', 'changelog'];
-const MENU_LABELS = { faq: 'FAQ', terms: 'Terms', changelog: 'Changelog' };
+const MENU_ITEMS = ['support', 'faq', 'terms', 'changelog'];
+const MENU_LABELS = {
+  support: 'Donate',
+  faq: 'FAQ',
+  terms: 'Terms',
+  changelog: 'Changelog',
+};
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!getToken());
@@ -30,7 +39,16 @@ function App() {
   // Returning users (usn in localStorage) skip the landing page
   const [showLogin, setShowLogin] = useState(() => !!localStorage.getItem('usn'));
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSupportPopup, setShowSupportPopup] = useState(false);
   const menuRef = useRef(null);
+  const popupCountedRef = useRef(false);
+
+  // Admin UI appears only inside a panel-credential session (the panel
+  // username/password typed on the login page). No admin link exists for
+  // anyone logging in the normal way — not even the admin's own USN.
+  const isAdmin = !!sessionStorage.getItem('panel_creds');
+  const menuItems = isAdmin ? [...MENU_ITEMS, 'admin'] : MENU_ITEMS;
+  const menuLabels = isAdmin ? { ...MENU_LABELS, admin: 'Admin' } : MENU_LABELS;
 
   useEffect(() => {
     // Clear legacy password storage
@@ -55,6 +73,42 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // --- donation popup -------------------------------------------------------
+  function donationPopupBlocked() {
+    // Never during a panel session (the admin is here to review proofs)
+    if (sessionStorage.getItem('panel_creds')) return true;
+    // Never for supporters
+    try {
+      const att = JSON.parse(localStorage.getItem('attendance') || 'null');
+      if (att && att.is_supporter) return true;
+    } catch {
+      // corrupted cache — treat as non-supporter
+    }
+    // Unified once-per-day gate, shared with the 429 trigger — no bypass
+    const today = new Date().toLocaleDateString('en-CA');
+    return localStorage.getItem('popup_shown_date') === today;
+  }
+
+  function openDonationPopup() {
+    if (!loggedIn || donationPopupBlocked()) return false;
+    setShowSupportPopup(true);
+    localStorage.setItem('popup_shown_date', new Date().toLocaleDateString('en-CA'));
+    return true;
+  }
+
+  // Cadence: popup due on opens 1, 3, 6, 9, 12… (first-ever open included,
+  // then every 3rd). Due-ness is decided purely by the open count; the
+  // once-per-day / supporter / panel gates live inside openDonationPopup().
+  useEffect(() => {
+    if (!loggedIn) return;
+    if (popupCountedRef.current) return; // StrictMode double-mount guard
+    popupCountedRef.current = true;
+    const n = (parseInt(localStorage.getItem('app_opens') || '0', 10) || 0) + 1;
+    localStorage.setItem('app_opens', String(n));
+    if (n === 1 || n % 3 === 0) openDonationPopup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn]);
+
   // Fetch attendance on login
   useEffect(() => {
     if (!loggedIn) return;
@@ -77,12 +131,14 @@ function App() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loggedIn]);
 
   function handleLogin() {
     setLoggedIn(true);
     setShowLogin(false);
-    setTab('attendance');
+    // Panel-credential sessions go straight to the review queue
+    setTab(sessionStorage.getItem('panel_creds') ? 'admin' : 'attendance');
   }
 
   function handleLogout() {
@@ -94,12 +150,14 @@ function App() {
     sessionStorage.removeItem('sessionPassword');
     setTab('attendance');
     setShowLogin(false);
+    setShowSupportPopup(false);
   }
 
   function handleRefresh() {
     if (!sessionPassword) {
-      // No password in session — redirect to login
+      // No password in session — send to login (not landing)
       handleLogout();
+      setShowLogin(true);
       return;
     }
     setLoading(true);
@@ -109,7 +167,11 @@ function App() {
         setAttendance(res);
         localStorage.setItem('attendance', JSON.stringify(res));
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        setError(err.message);
+        // Out of refreshes → nudge through the same once-per-day popup gate
+        if (err.status === 429) openDonationPopup();
+      })
       .finally(() => setLoading(false));
   }
 
@@ -117,21 +179,27 @@ function App() {
     setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
   }
 
-  function handleFaqBack() {
-    if (loggedIn) {
-      setTab('attendance');
-    } else {
-      setTab('attendance');
-      window.scrollTo(0, 0);
-    }
-  }
-
   return (
     <div className="app">
       <BetaBanner />
       <header className="header">
         <div className="header-top">
-          <h1>JATracker</h1>
+          <div className="header-brand">
+            {tab !== 'attendance' && (
+              <button
+                className="nav-back"
+                aria-label="Back to summary"
+                title="Back"
+                onClick={() => {
+                  setTab('attendance');
+                  window.scrollTo(0, 0);
+                }}
+              >
+                ←
+              </button>
+            )}
+            <h1 className="brand-accent">JA-Tracker</h1>
+          </div>
           <div className="header-actions">
             <button className="theme-toggle" onClick={toggleTheme}>
               {theme === 'dark' ? 'Light' : 'Dark'}
@@ -158,81 +226,112 @@ function App() {
               >
                 Leaderboard
               </button>
-              <div className="nav-menu" ref={menuRef}>
-                <button
-                  className={`nav-menu-trigger${MENU_ITEMS.includes(tab) ? ' active' : ''}`}
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                >
-                  {menuOpen ? '✕' : '☰'}
-                </button>
-                {menuOpen && (
-                  <div className="nav-menu-dropdown" role="menu">
-                    {MENU_ITEMS.map((item) => (
-                      <button
-                        key={item}
-                        role="menuitem"
-                        className={tab === item ? 'active' : ''}
-                        onClick={() => {
-                          setTab(item);
-                          setMenuOpen(false);
-                        }}
-                      >
-                        {MENU_LABELS[item]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </nav>
-            {tab === 'attendance' && (
               <button
-                className="btn"
-                onClick={handleRefresh}
-                disabled={loading}
+                className={tab === 'supporters' ? 'active' : ''}
+                onClick={() => setTab('supporters')}
               >
-                {loading ? 'Refreshing...' : 'Refresh'}
+                Supporters
               </button>
-            )}
+            </nav>
+            <div className="nav-menu" ref={menuRef}>
+              <button
+                className={`nav-menu-trigger${MENU_ITEMS.includes(tab) || tab === 'admin' ? ' active' : ''}`}
+                onClick={() => setMenuOpen((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+              >
+                {menuOpen ? '✕' : '☰'}
+              </button>
+              {menuOpen && (
+                <div className="nav-menu-dropdown" role="menu">
+                  {menuItems.map((item) => (
+                    <button
+                      key={item}
+                      role="menuitem"
+                      className={tab === item ? 'active' : ''}
+                      onClick={() => {
+                        setTab(item);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      {menuLabels[item]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </header>
 
       <main className="app-content">
         {tab === 'changelog' ? (
-          <Changelog onBack={() => { setTab('attendance'); window.scrollTo(0, 0); }} loggedIn={loggedIn} />
+          <Changelog />
         ) : tab === 'terms' ? (
-          <Terms onBack={() => { setTab(loggedIn ? 'attendance' : 'attendance'); window.scrollTo(0, 0); }} />
+          <Terms />
         ) : tab === 'faq' ? (
-          <Faq onBack={handleFaqBack} />
+          <Faq />
+        ) : tab === 'support' ? (
+          <Support loggedIn={loggedIn} onLoginRequired={() => setShowLogin(true)} />
+        ) : tab === 'supporters' ? (
+          <Supporters onDonate={() => setTab('support')} />
+        ) : tab === 'admin' && isAdmin ? (
+          <AdminPanel
+            onLock={() => {
+              setTab('attendance');
+              window.scrollTo(0, 0);
+            }}
+          />
         ) : !loggedIn ? (
           showLogin ? (
             <Login
               onLogin={handleLogin}
               onPassword={setSessionPassword}
-              onTerms={() => navigate('terms')}
+              onTerms={() => setTab('terms')}
               onBack={() => setShowLogin(false)}
             />
           ) : (
             <Landing onLogin={() => setShowLogin(true)} />
           )
-        ) : loading ? (
+        ) : loading && !attendance ? (
           <p className="loading">Fetching your attendance...</p>
         ) : error ? (
           <div className="error-block">
             <p className="error-msg">{error}</p>
             <p className="error-hint">The server may be waking up from sleep. Wait a minute and try again.</p>
+            <button
+              className="btn error-retry"
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              {loading ? 'Refreshing...' : 'Try again'}
+            </button>
             <p className="error-feedback">
               Something wrong? <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">Report it</a>
             </p>
           </div>
         ) : tab === 'attendance' ? (
-          <AttendanceSummary data={attendance} />
+          <AttendanceSummary
+            data={attendance}
+            onRefresh={handleRefresh}
+            loading={loading}
+            onDonate={() => setTab('support')}
+          />
         ) : (
           <Leaderboard myBranch={attendance?.branch} />
         )}
       </main>
+
+      {showSupportPopup && (
+        <DonationPopup
+          onClose={() => setShowSupportPopup(false)}
+          onSupport={() => {
+            setShowSupportPopup(false);
+            setTab('support');
+            window.scrollTo(0, 0);
+          }}
+        />
+      )}
 
       <footer className="app-footer">
         <div className="footer-links">

@@ -233,10 +233,11 @@
    ======================================== */
 
 .request-left {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  margin-bottom: 1.5rem;
-  font-style: italic;
+  font-size: 0.85rem;
+  color: #000;
+  margin: 0.6rem 0 0;
+  font-style: normal;
+  font-weight: 500;
 }
 
 /* ========================================
@@ -299,6 +300,11 @@
   font-size: 0.8rem;
   color: var(--text-dim);
   margin-top: 0.4rem;
+}
+
+.error-retry {
+  margin-top: 0.75rem;
+  min-width: 110px;
 }
 
 .error-feedback a {
@@ -406,6 +412,35 @@ a:hover {
   margin-bottom: 0.5rem;
 }
 
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+/* Navbar back button — shown on every page except the main summary */
+.nav-back {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-bright);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.nav-back:hover {
+  border-color: var(--blue);
+  background: var(--bg-hover);
+}
+
 .header-bottom {
   display: flex;
   justify-content: space-between;
@@ -461,6 +496,8 @@ a:hover {
 
 .nav-menu {
   position: relative;
+  /* Extreme right even when header-bottom wraps on narrow screens */
+  margin-left: auto;
 }
 
 .nav-menu-trigger {
@@ -486,7 +523,9 @@ a:hover {
 .nav-menu-dropdown {
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
+  /* Menu sits at the far right edge — open the dropdown leftward */
+  right: 0;
+  left: auto;
   min-width: 140px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -586,7 +625,7 @@ a:hover {
 }
 
 .brand-accent {
-  color: var(--blue);
+  color: #6e84a8;
 }
 
 .landing-login {
@@ -689,6 +728,13 @@ a:hover {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Every button's text goes white on hover — except the donate CTAs,
+   which keep dark text on their green plate (.btn-shine). Light theme
+   keeps its existing hover colors (white-on-light would vanish). */
+[data-theme="dark"] .app button:not(.btn-shine):hover {
+  color: #fff;
 }
 
 .btn-primary {
@@ -905,6 +951,31 @@ a:hover {
 .stat-overall .stat-value.mid,
 .stat-overall .stat-value.low {
   color: #f0f0ec;
+}
+
+/* Refresh sits inside the Overall box now — light outline on the blue card */
+.stat-refresh {
+  display: inline-block;
+  margin-top: 0.8rem;
+  padding: 0.4rem 1.3rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f0f0ec;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.stat-refresh:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.stat-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .stat-row {
@@ -1301,11 +1372,23 @@ a:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* name + ★ badge hug together as one cell; the cell stretches so the
+   %/branch/time stay pinned to the right of the row */
+.leaderboard-name {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.leaderboard-name .supporter-badge {
+  flex-shrink: 0;
+}
+
 .leaderboard-usn {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   color: var(--text);
-  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1465,5 +1548,789 @@ a:hover {
 @media (min-width: 1024px) {
   .leaderboard-row {
     gap: 1rem;
+  }
+}
+
+/* ========================================
+   Weekly Timetable Grid
+   ======================================== */
+
+/* 9 columns never fit a phone — horizontal scroll */
+.tt-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tt-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+/* Header row — same treatment as .subj-table-header */
+.tt-head {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  font-weight: 600;
+  padding: 0.4rem 0.35rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.tt-head-day {
+  text-align: left;
+  /* Frozen while the period columns scroll sideways */
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--bg);
+}
+
+/* Day column — the portal's bg-primary cells, themed */
+.tt-day {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.6rem;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.tt-day-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.tt-day-date {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+/* Period cells */
+.tt-cell {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.3rem;
+  text-align: center;
+  vertical-align: top;
+  min-width: 4.5rem;
+  height: 3.6rem;
+}
+
+.tt-course {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-faculty,
+.tt-type {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status line — Present green / Absent red (portal's text-success/text-danger) */
+.tt-status {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tt-present .tt-status {
+  color: var(--green);
+}
+
+.tt-absent .tt-status {
+  color: var(--red);
+}
+
+.tt-absent .tt-course {
+  color: var(--red);
+}
+
+/* Highlight missed classes so they pop out of the grid */
+.tt-absent {
+  background: var(--bg-hover);
+  border-color: var(--red);
+}
+
+/* Free period / lunch break */
+.tt-empty {
+  background: transparent;
+}
+
+.tt-empty.tt-cell {
+  border-style: dotted;
+  border-color: var(--border);
+}
+
+/* ========================================
+   Support / supporters / donation popup
+   ======================================== */
+
+/* --- shared progress bar (popup + Support page) --- */
+.progress-block {
+  margin: 0.5rem 0 1.25rem;
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.progress-raised {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.progress-goal {
+  color: var(--text-dim);
+}
+
+.progress-bar {
+  height: 10px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--blue);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.progress-sub {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+}
+
+/* --- donation popup --- */
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.popup-card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.popup-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.popup-close:hover {
+  color: var(--text-bright);
+}
+
+.popup-title {
+  font-size: 1.15rem;
+  color: var(--text-bright);
+  margin-bottom: 0.6rem;
+  padding-right: 1.5rem;
+}
+
+.popup-body {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.55;
+  margin-bottom: 1rem;
+}
+
+.popup-hint {
+  font-size: 0.91rem;
+  color: var(--text-dim);
+  margin: 1rem 0 0.75rem;
+  text-align: center;
+}
+
+.popup-support {
+  width: 100%;
+  margin-bottom: 0.4rem;
+}
+
+.popup-later {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.popup-later:hover {
+  color: var(--text);
+}
+
+/* --- Support page --- */
+.support-page h2,
+.supporters-page h2,
+.admin-page h2 {
+  font-size: 1.56rem;
+  color: var(--text-bright);
+  margin-bottom: 0.75rem;
+}
+
+.support-intro,
+.supporters-intro {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+
+/* Perks / impact lists on the Support page */
+.perk-list {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.perk-list li {
+  position: relative;
+  padding-left: 1.35rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.perk-list li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.perk-list li strong {
+  color: var(--text-bright);
+}
+
+/* Donate CTA under the timetable on the Summary page */
+.summary-donate {
+  margin-top: 1.75rem;
+  text-align: center;
+}
+
+/* Supporters page footer: centered Donate CTA (back lives in the navbar) */
+.supporters-donate {
+  margin-top: 1.75rem;
+  text-align: center;
+}
+
+/* Donate CTAs: always lit (permanent gloss) + fast bright glints that
+   never stop crossing the button */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.2s, background 0.2s;
+}
+
+/* permanent gloss — constant shine even between glints */
+.btn-shine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0) 75%
+  );
+  pointer-events: none;
+}
+
+/* single glint per loop — one pass every 2.6s, like the original */
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 9%,
+    rgba(255, 255, 255, 0) 20%
+  );
+  background-size: 200% 100%;
+  animation: btn-shine-sweep 2.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes btn-shine-sweep {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* hover: hold the green plate and snap the text to true dark */
+.btn-shine:hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: #0b0b0b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-shine::after {
+    animation: none;
+  }
+}
+
+.upi-card {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  flex-wrap: wrap;
+}
+
+.upi-qr {
+  width: 200px;
+  height: auto;
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px;
+  border: 1px solid var(--border);
+}
+
+.upi-details {
+  flex: 1;
+  min-width: 200px;
+}
+
+.upi-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin-bottom: 0.35rem;
+}
+
+.upi-id-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upi-id {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-bright);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  word-break: break-all;
+}
+
+.copy-btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.copy-btn:hover {
+  background: var(--blue);
+  color: var(--bg);
+}
+
+.copy-btn.copied {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.copy-btn.copied:hover {
+  background: transparent;
+  color: var(--green);
+}
+
+.upi-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 0.6rem;
+}
+
+.donate-form {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+}
+
+.donate-form input[type="file"] {
+  padding: 0.45rem;
+  font-size: 0.8rem;
+}
+
+.donate-form input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.donate-form .btn-primary {
+  width: 100%;
+}
+
+.optional {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.form-hint {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  margin: 0.25rem 0 0.9rem;
+  line-height: 1.5;
+}
+
+.form-error {
+  font-size: 0.84rem;
+  color: var(--red);
+  margin-top: 0.7rem;
+}
+
+.form-note.success {
+  font-size: 0.84rem;
+  color: var(--green);
+  margin-top: 0.7rem;
+  line-height: 1.5;
+}
+
+.login-nudge {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.login-nudge p {
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* --- Supporters page (month-wise wall, card grid) --- */
+.supporters-list {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.75rem;
+}
+
+.supporter-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.supporter-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.supporter-avatar {
+  flex-shrink: 0;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.supporter-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supporter-msg {
+  font-size: 0.84rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* --- admin panel --- */
+.admin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-head h2 {
+  margin-bottom: 0;
+}
+
+.admin-unlock {
+  max-width: 380px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.admin-unlock .btn-primary {
+  width: 100%;
+}
+
+.admin-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.admin-item {
+  display: flex;
+  gap: 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-shot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.admin-thumb {
+  width: 150px;
+  height: auto;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.admin-noimg {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  width: 150px;
+  text-align: center;
+}
+
+.admin-fullview {
+  font-size: 0.72rem;
+  color: var(--blue);
+}
+
+.admin-info {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-meta {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.admin-meta strong {
+  color: var(--text-bright);
+  font-size: 0.92rem;
+}
+
+.admin-msg {
+  font-size: 0.84rem;
+  color: var(--text);
+  font-style: italic;
+  margin: 0;
+}
+
+/* private note from the donor — review queue only, never on the wall */
+.admin-note {
+  font-size: 0.82rem;
+  color: var(--blue);
+  margin: 0;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--blue);
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.admin-amt-label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.admin-amt {
+  width: 84px;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-bright);
+  font-size: 0.85rem;
+}
+
+.admin-approve,
+.admin-reject {
+  padding: 0.45rem 1rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: background 0.15s, color 0.15s;
+}
+
+.admin-approve {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.admin-approve:hover:not(:disabled) {
+  background: var(--green);
+  color: var(--bg);
+}
+
+.admin-reject {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.admin-reject:hover:not(:disabled) {
+  background: var(--red);
+  color: var(--bg);
+}
+
+.admin-approve:disabled,
+.admin-reject:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --- supporter badge (leaderboard) --- */
+.supporter-badge {
+  font-size: 0.68rem;
+  color: var(--yellow);
+  border: 1px solid var(--yellow);
+  border-radius: 999px;
+  padding: 0 0.4em;
+  margin-left: 0.4em;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+/* --- small screens --- */
+@media (max-width: 560px) {
+  .upi-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .upi-qr {
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+
+  .admin-item {
+    flex-direction: column;
   }
 }

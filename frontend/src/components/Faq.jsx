@@ -25,7 +25,7 @@ const faqItems = [
   },
 ];
 
-export default function Faq({ onBack }) {
+export default function Faq() {
   return (
     <div className="faq-page">
       <h2>Frequently Asked Questions</h2>
@@ -35,9 +35,6 @@ export default function Faq({ onBack }) {
           <p>{item.a}</p>
         </details>
       ))}
-      <button className="faq-back" onClick={onBack}>
-        ← Back
-      </button>
     </div>
   );
 }

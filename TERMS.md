@@ -55,3 +55,10 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 
 - Bugs, concerns, or feature requests: [Feedback Form](https://forms.gle/RW7jREYrceoacjxY9)
 - For data removal requests, mention "data deletion" in the feedback form.
+
+## 12. Donations
+
+- Donations are **voluntary support for the project's running costs** — not a purchase, subscription, or payment for any service.
+- Supporting is optional: all core features remain free whether or not you donate.
+- Supporters receive non-monetary perks (a leaderboard badge, a higher daily refresh limit, and optional recognition on the Supporters page).
+- Proof of payment submitted through the app is reviewed manually before any perk is activated; a submission by itself does not grant supporter status.

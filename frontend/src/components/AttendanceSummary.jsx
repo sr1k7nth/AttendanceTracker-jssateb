@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { ADMIN_USN } from '../config';
+import Timetable from './Timetable';
 
 function pctColor(pct) {
   const n = parseFloat(pct);
@@ -7,7 +9,7 @@ function pctColor(pct) {
   return 'low';
 }
 
-export default function AttendanceSummary({ data }) {
+export default function AttendanceSummary({ data, onRefresh, loading, onDonate }) {
   const [target, setTarget] = useState('');
   const [calculated, setCalculated] = useState(null);
 
@@ -41,6 +43,21 @@ export default function AttendanceSummary({ data }) {
           <div className={`stat-value ${pctColor(data.total_avg + '%')}`}>
             {data.total_avg}%
           </div>
+          <button
+            className="stat-refresh"
+            onClick={onRefresh}
+            disabled={loading}
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+          {/* Request limit — lives inside the Overall box, under Refresh */}
+          {data.request_left !== undefined && (
+            <p className="request-left">
+              {localStorage.getItem('usn') === ADMIN_USN || data.request_left > (data.request_cap || 2)
+                ? 'Unlimited'
+                : `${data.request_left} / ${data.request_cap || 2}`} refreshes left today
+            </p>
+          )}
         </div>
         <div className="stat-card stat-row">
           <div className="stat-label">Can miss</div>
@@ -62,31 +79,25 @@ export default function AttendanceSummary({ data }) {
         </div>
       </div>
 
-      {/* Request limit */}
-      {data.request_left !== undefined && (
-        <p className="request-left">
-          {data.request_left > 4 ? 'Unlimited' : `${data.request_left} / 4`} refreshes left today
-        </p>
-      )}
-
-      {/* Custom Target Calculator */}
-      <div className="custom-calc">
-        <h3 className="section-title">Custom Target</h3>
-        <div className="calc-row">
-          <span className="calc-label">Target %</span>
-          <input
-            type="number"
-            className="calc-input"
-            placeholder="e.g. 80"
-            min="1"
-            max="100"
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCalculate()}
-          />
-          <button className="btn calc-btn" onClick={handleCalculate}>
-            Calculate
-          </button>
+      {/* Custom Target Calculator — stat-card style, matches Can miss / Need to attend */}
+      <div className="stats">
+        <div className="stat-card stat-row" style={{ flexWrap: 'wrap' }}>
+          <div className="stat-label">Enter Target %</div>
+          <div className="stat-row-values">
+            <input
+              type="number"
+              className="calc-input"
+              placeholder="e.g. 80"
+              min="1"
+              max="100"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCalculate()}
+            />
+            <button className="btn btn-primary calc-btn" onClick={handleCalculate}>
+              Calculate
+            </button>
+          </div>
         </div>
         {calculated && (
           <p className="calc-result">
@@ -98,9 +109,14 @@ export default function AttendanceSummary({ data }) {
         )}
       </div>
 
+      {/* Weekly Attendance (moved above Subject-wise) */}
+      <div style={{ marginTop: '2rem' }}>
+        <Timetable data={data.timetable} />
+      </div>
+
       {/* Subject-wise Attendance */}
       {data.summary && data.summary.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '2rem', marginTop: '2rem' }}>
           <h3 className="section-title">Subject-wise Attendance</h3>
 
           {/* Table header */}
@@ -132,24 +148,12 @@ export default function AttendanceSummary({ data }) {
         </div>
       )}
 
-      {/* Absent Periods */}
-      {data.absent_periods && data.absent_periods.length > 0 && (
-        <div>
-          <h3 className="section-title">Absent Periods</h3>
-          <ul className="absent-list">
-            {data.absent_periods.map((a, i) => (
-              <li key={i} className="absent-row">
-                <span className="absent-day">{a.day}</span>
-                <span className="absent-date">{a.date}</span>
-                <span className="absent-course" title={a.course}>
-                  {a.course}
-                </span>
-                <span className="absent-status">{a.attendance}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Bottom donate CTA */}
+      <div className="summary-donate">
+        <button className="btn btn-primary btn-shine" onClick={onDonate}>
+          Support the project
+        </button>
+      </div>
 
       {/* Branch & Sem */}
       {(data.branch || data.sem) && (

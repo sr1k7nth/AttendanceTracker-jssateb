@@ -4,7 +4,7 @@ export default function Landing({ onLogin }) {
       <p className="login-tagline">
         Stressed about attendance?
         <br />
-        Welcome to <span className="brand-accent">JATracker</span>.
+        Welcome to <span className="brand-accent">JA-Tracker</span>.
       </p>
       <button className="btn btn-primary landing-login" onClick={onLogin}>
         Login

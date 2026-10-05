@@ -1,5 +1,22 @@
 const versions = [
   {
+    version: 'v2.2',
+    date: 'Sep 30, 2026',
+    title: 'Supporters & Donations',
+    changes: [
+      'Donate page: pay by UPI (QR code + copy button) with a live progress bar toward the ₹500 monthly goal',
+      'Donation form: name, amount, payment screenshot, an optional message shown on the Supporters wall, and an optional private note only the admin sees',
+      'Supporters wall: month-wise card grid of everyone who chipped in (Anonymous donors included)',
+      'Supporter perks: 6 attendance refreshes a day (standard is 4), plus a ★ badge beside your name on the leaderboard',
+      'One-a-day donation nudge popup for regulars, never shown to supporters or first-time visitors',
+      'Back button in the navbar on every page except Summary, with Supporters listed beside Leaderboard',
+      'Leaderboard sorted by latest check-in, then percentage',
+      'Monochrome dark/light theme with a slate-blue accent',
+      'Weekly timetable with a sticky day column, shown above Subject-wise attendance',
+      'Terms updated with the donation and supporter-perk clauses',
+    ],
+  },
+  {
     version: 'v2.1',
     date: 'Sep 22, 2026',
     title: 'Landing Page & Polish',
@@ -63,12 +80,9 @@ const versions = [
   },
 ];
 
-export default function Changelog({ onBack, loggedIn }) {
+export default function Changelog() {
   return (
     <div className="changelog-page">
-      <button className="faq-back" onClick={onBack}>
-        &larr; Back
-      </button>
       <h2>Changelog</h2>
       <div className="changelog-list">
         {versions.map((v) => (

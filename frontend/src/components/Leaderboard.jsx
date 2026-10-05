@@ -18,9 +18,13 @@ export default function Leaderboard({ myBranch }) {
     fetchLeaderboard(sort, branch)
       .then((data) => {
         const avgDir = sort === 'desc' ? -1 : 1;
+        const dayKey = (ts) =>
+          new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(
+            new Date(ts)
+          );
         const ordered = [...data].sort((a, b) => {
-          const t = new Date(b.timestamp) - new Date(a.timestamp);
-          if (t !== 0) return t;
+          const dayDiff = dayKey(b.timestamp).localeCompare(dayKey(a.timestamp));
+          if (dayDiff !== 0) return dayDiff;
           return (a.total_avg - b.total_avg) * avgDir;
         });
         setUsers(ordered.map((u, i) => ({ ...u, rank: i + 1 })));
@@ -77,8 +81,15 @@ export default function Leaderboard({ myBranch }) {
             <li key={u.rank} className={`leaderboard-row${isPinned ? ' leaderboard-me' : ''}`}>
               <span className="leaderboard-rank">{u.rank}</span>
               {/* Legacy alias fallback */}
-              <span className="leaderboard-usn" title={u.alias || 'Anonymous'}>
-                {u.alias || 'Anonymous'}
+              <span className="leaderboard-name">
+                <span className="leaderboard-usn" title={u.alias || 'Anonymous'}>
+                  {u.alias || 'Anonymous'}
+                </span>
+                {u.is_supporter && (
+                  <span className="supporter-badge" title="Supporter">
+                    ★
+                  </span>
+                )}
               </span>
               <span className={`attendance-pct ${u.total_avg >= 85 ? 'high' : u.total_avg >= 75 ? 'mid' : 'low'}`}>
                 {u.total_avg}%

@@ -1,4 +1,4 @@
-export default function Terms({ onBack }) {
+export default function Terms() {
   return (
     <div className="terms-page">
       <h2>Terms & Conditions</h2>
@@ -95,11 +95,18 @@ export default function Terms({ onBack }) {
           </li>
           <li>For data removal requests, mention "data deletion" in the feedback form.</li>
         </ul>
-      </div>
 
-      <button className="faq-back" onClick={onBack}>
-        Back
-      </button>
+        <h3>12. Donations</h3>
+        <ul>
+          <li>Donations are <strong>voluntary support for the project's running costs</strong>, not a
+            purchase, subscription, or payment for any service.</li>
+          <li>Supporting is optional: all core features remain free whether or not you donate.</li>
+          <li>Supporters receive non-monetary perks (a leaderboard badge, a higher daily refresh limit,
+            and optional recognition on the Supporters page).</li>
+          <li>Proof of payment submitted through the app is reviewed manually before any perk is
+            activated; a submission by itself does not grant supporter status.</li>
+        </ul>
+      </div>
     </div>
   );
 }

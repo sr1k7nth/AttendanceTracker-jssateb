@@ -2,6 +2,7 @@ venv/
 __pycache__/
 *.pyc
 .env
+backend/.portal_creds
 .git/
 *.png
 *.db
@@ -16,3 +17,13 @@ frontend/dist/
 .opencode/
 opencode.json
 backend/tests/test_security.py
+backend/uploads/
+!frontend/public/upi-qr.jpg
+.codegraph/
+backend/ram_probe.py
+backend/timing_probe.py
+backend/seed_donations.py
+backend/home.html
+backend/login.html
+backend/sample.html
+backend/sample_test.html

@@ -45,6 +45,7 @@ def leaderboard(
             branch=user.branch,
             rank=rank,
             is_me=user.usn == usn,
+            is_supporter=user.is_supporter,
         )
         for rank, user in enumerate(users, start=1)
     ]
