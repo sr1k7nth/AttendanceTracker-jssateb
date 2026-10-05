@@ -23,7 +23,7 @@ The JSSATEB college ERP portal has **no public API**. It's an ASP.NET WebForms a
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
 | POST | `/scraper/login` | No | None | Scrape portal → cache in DB → return JWT |
-| POST | `/scraper/refresh` | JWT | 4/day, 2hr TTL | Re-scrape portal → update cache |
+| POST | `/scraper/refresh` | JWT | None | Re-scrape portal → update cache |
 | GET | `/fetch_attendance/` | JWT | None | Return cached attendance (incl. timetable) from DB |
 | GET | `/leaderboard` | JWT | None | Ranked list of opted-in users |
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
@@ -33,19 +33,13 @@ The JSSATEB college ERP portal has **no public API**. It's an ASP.NET WebForms a
 
 ## Rate Limiting
 
-Implemented in `/scraper/refresh`:
+**There are none.** No daily quota, no 2-hour TTL, no 429:
 
-- **Daily limit:** 4 requests per user per day (resets at midnight UTC)
-- **Supporters:** 6 requests per day once a donation is approved
-- **TTL cache:** If data is less than 2 hours old, return cached (no scrape)
-- **Login:** Always scrapes fresh, no limits applied
-
-Flow:
 ```
-Refresh request → check daily reset → check TTL (< 2hr → cached) → check rate limit (<= 0 → 429) → scrape + decrement
+Refresh request → scrape portal → update cache → return
 ```
 
-Quotas come from `.env` (`FREE_REQUESTS_PER_DAY`, `SUPPORTER_REQUESTS_PER_DAY`), so flipping 4 → 2 later is a one-line change.
+Both `/scraper/login` and `/scraper/refresh` perform a real scrape every time.
 
 ## How a scrape works
 
@@ -59,7 +53,8 @@ the shared functions in `portal_client.py`:
 | 3 | `POST /RApps/Home/login.aspx` | the real login (USN and password RSA'd) |
 | 4 | `GET /apps/TimeTable/StudentAttendance.aspx` + `POST …/StudentAttendanceSummary.aspx` | the timetable and the summary |
 
-There is no concurrency cap: requests that arrive together simply run together.
+There is no concurrency cap: requests that arrive together simply run together,
+and every request that reaches the scraper really does hit the portal.
 
 Run it yourself:
 
@@ -115,7 +110,7 @@ backend/
 | `leaderboard_opt` | BOOL | Opted in to leaderboard |
 | `sem` | INT | Current semester |
 | `branch` | VARCHAR | Student branch |
-| `request_left` | INT | Remaining refreshes today (default = `FREE_REQUESTS_PER_DAY`, i.e. 4) |
+| `request_left` | INT | Legacy — leftover from the old daily quota; nothing reads or writes it |
 | `is_supporter` | BOOL | Supporter flag — set when a donation is approved (default false) |
 
 ### `donations` table
@@ -153,8 +148,6 @@ See `.env.example` for a copyable template.
 | `OAUTH_ALGORITHM` | JWT algorithm (HS256) |
 | `ENCRYPTION_KEY` | Reserved, currently unused — any non-empty value |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
-| `FREE_REQUESTS_PER_DAY` | Daily refreshes per regular user (default `4`) |
-| `SUPPORTER_REQUESTS_PER_DAY` | Daily refreshes per supporter (default `6`) |
 | `DONATION_GOAL` | Monthly donation goal in ₹ (default `500`) |
 | `DONATIONS_UPLOAD_DIR` | Payment screenshot storage (default `backend/uploads/donations`) |
 

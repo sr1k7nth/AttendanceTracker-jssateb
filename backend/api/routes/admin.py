@@ -110,7 +110,7 @@ def approve_donation(
     db: Session = Depends(get_db),
     _admin: str = Depends(require_admin),
 ):
-    """One action = verified: donation approved + perk granted + quota topped up."""
+    """One action = verified: donation approved and the supporter perk granted."""
     row = _get_pending(donation_id, db)
     user = db.query(AttendanceModel).filter(AttendanceModel.usn == row.usn).first()
     if user is None:
@@ -121,9 +121,6 @@ def approve_donation(
     row.status = "approved"
     row.reviewed_at = datetime.now(timezone.utc)
     user.is_supporter = True  # type: ignore[assignment]
-    user.request_left = max(  # type: ignore[operator]
-        user.request_left or 0, settings.SUPPORTER_REQUESTS_PER_DAY
-    )
     db.commit()
     logger.info(
         "donation %d approved: usn=%s amount=%d", row.id, row.usn, row.amount
@@ -132,7 +129,6 @@ def approve_donation(
         "status": "approved",
         "usn": row.usn,
         "amount": row.amount,
-        "request_left": user.request_left,
     }
 
 

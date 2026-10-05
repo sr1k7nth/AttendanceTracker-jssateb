@@ -145,10 +145,6 @@ export default function Support({ loggedIn, onLoginRequired }) {
           project.
         </li>
         <li>
-          <strong>More daily refreshes</strong>: your refresh quota jumps the moment
-          your payment is approved.
-        </li>
-        <li>
           <strong>Your name on the Supporters wall</strong> (or Anonymous, your
           choice), month-wise with everyone else.
         </li>

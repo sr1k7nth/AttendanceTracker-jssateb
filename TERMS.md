@@ -23,10 +23,11 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 - The application is deployed directly from the public repository. Any changes to the code are immediately visible and auditable.
 - [View Source Code](https://github.com/sr1k7nth/AttendanceTracker-jssateb)
 
-## 5. Rate Limiting
+## 5. No Usage Limits
 
-- Each user is limited to **4 data refreshes per day** to minimize unnecessary load on the college portal.
-- Data is cached for **2 hours** between refreshes to further reduce scraping frequency.
+- There is **no daily refresh quota** and no waiting period between refreshes — you can refresh as often as you like.
+- There is no 2-hour cache delay: every refresh performs a fresh scrape.
+- Please still refresh only when you actually need to; each one sends live requests to the college portal.
 
 ## 6. No Guarantee of Accuracy
 
@@ -60,5 +61,5 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 
 - Donations are **voluntary support for the project's running costs** — not a purchase, subscription, or payment for any service.
 - Supporting is optional: all core features remain free whether or not you donate.
-- Supporters receive non-monetary perks (a leaderboard badge, a higher daily refresh limit, and optional recognition on the Supporters page).
+- Supporters receive non-monetary perks (a leaderboard badge and optional recognition on the Supporters page).
 - Proof of payment submitted through the app is reviewed manually before any perk is activated; a submission by itself does not grant supporter status.

@@ -9,8 +9,6 @@ from pydantic import (
 )
 from datetime import datetime
 
-from .config import settings
-
 
 class UserPayload(BaseModel):
     usn: str
@@ -77,21 +75,8 @@ class AttendanceResponse(BaseModel):
     leaderboard_opt: bool
     sem: int | None = None
     branch: str | None = None
-    request_left: int
     timetable: dict | None = None
     is_supporter: bool = False
-    # Daily cap for this user — computed server-side so the frontend never
-    # hardcodes the quota (FREE vs SUPPORTER).
-    request_cap: int = 0
-
-    @model_validator(mode="after")
-    def _fill_request_cap(self) -> "AttendanceResponse":
-        self.request_cap = (
-            settings.SUPPORTER_REQUESTS_PER_DAY
-            if self.is_supporter
-            else settings.FREE_REQUESTS_PER_DAY
-        )
-        return self
 
 
 class LeaderboardResponse(BaseModel):

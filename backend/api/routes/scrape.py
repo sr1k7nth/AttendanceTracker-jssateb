@@ -18,27 +18,10 @@ ADMIN_USN = "JS240955"
 
 logger = logging.getLogger("scraper.queue")
 
-# No concurrency limiter here any more: each scrape is four HTTP requests
-# costing ~9 MB and ~1s, so a burst of them neither exhausts RAM nor needs a
-# queue to arbitrate — requests that arrive together simply run together.
-# Cached and quota-expired requests never reach the scraper at all.
-
-
-def _reset_if_new_day(user):
-    """Reset the user's daily scrape quota if their last scrape was yesterday.
-
-    Free users get FREE_REQUESTS_PER_DAY, supporters get SUPPORTER_REQUESTS_PER_DAY.
-    """
-    ts = user.timestamp
-    now = datetime.now(timezone.utc)
-    if ts.tzinfo is None:
-        ts = ts.replace(tzinfo=timezone.utc)
-    if ts.date() != now.date():
-        user.request_left = (
-            settings.SUPPORTER_REQUESTS_PER_DAY
-            if user.is_supporter
-            else settings.FREE_REQUESTS_PER_DAY
-        )
+# No concurrency limiter, no rate limit, no TTL: every login and every refresh
+# performs a real scrape. Each one is four HTTP requests costing ~9 MB and ~1s,
+# so a burst of them neither exhausts RAM nor needs a queue to arbitrate —
+# requests that arrive together simply run together.
 
 
 def _scrape_and_cache(
@@ -129,41 +112,9 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             "admin": True,
             "usn": ADMIN_USN,
         }
-    existing = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
-    if existing and user.usn != ADMIN_USN:
-        _reset_if_new_day(existing)
-        # Out of requests → return cached data, no scrape
-        if existing.request_left is not None and existing.request_left <= 0:  # type: ignore
-            token = create_access_token(
-                {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
-            )
-            return {"token": token, "data": existing}
-        # Cache still fresh (<2hrs) → return cached data, no scrape
-        ts = existing.timestamp
-        now = datetime.now(timezone.utc)
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
-        age_minutes = (now - ts).total_seconds() / 60
-        if age_minutes < 120:
-            existing.leaderboard_opt = user.leaderboard_opt  # type: ignore
-            if user.alias is not None:
-                existing.alias = user.alias  # type: ignore
-            db.commit()
-            token = create_access_token(
-                {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
-            )
-            return {"token": token, "data": existing}
     data = _scrape_and_cache(
         user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias
     )
-    # Decrement request_left for non-admin users
-    if user.usn != ADMIN_USN:
-        user_obj = db.query(AttendanceModel).filter(AttendanceModel.usn == user.usn).first()
-        if user_obj:
-            _reset_if_new_day(user_obj)
-            if user_obj.request_left is not None and user_obj.request_left > 0:  # type: ignore
-                user_obj.request_left -= 1  # type: ignore
-                db.commit()
     token = create_access_token(
         {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
     )
@@ -180,29 +131,7 @@ def refresh(
 
     if user is None:
         raise HTTPException(status_code=401, detail="Register/Login first")
-    # Admin bypass — no rate limit or TTL check
-    if current_user != ADMIN_USN:
-        _reset_if_new_day(user)
-        # Handle both timezone-aware and naive timestamps from DB
-        ts = user.timestamp
-        now = datetime.now(timezone.utc)
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
-        age_minutes = (now - ts).total_seconds() / 60
-        if age_minutes < 120:
-            return user
-        if user.request_left <= 0:  # type: ignore
-            raise HTTPException(
-                429, detail="Daily scrape limit reached. Try again tomorrow."
-            )
-    data = _scrape_and_cache(current_user, user_data.password.get_secret_value(), db)
-    if current_user != ADMIN_USN:
-        # Re-query after _scrape_and_cache committed (old `user` is expired)
-        user = db.query(AttendanceModel).filter(AttendanceModel.usn == current_user).first()
-        if user:
-            _reset_if_new_day(user)
-            if user.request_left is not None and user.request_left > 0:  # type: ignore
-                user.request_left -= 1  # type: ignore
-                db.commit()
+    # Always a fresh scrape — no TTL, no daily quota.
+    _scrape_and_cache(current_user, user_data.password.get_secret_value(), db)
     db.refresh(user)
     return user

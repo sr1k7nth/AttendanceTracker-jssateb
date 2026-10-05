@@ -41,12 +41,13 @@ export default function Terms() {
           </li>
         </ul>
 
-        <h3>5. Rate Limiting</h3>
+        <h3>5. No Usage Limits</h3>
         <ul>
-          <li>Each user is limited to <strong>4 data refreshes per day</strong> to minimize unnecessary
-            load on the college portal.</li>
-          <li>Data is cached for <strong>2 hours</strong> between refreshes to further reduce scraping
-            frequency.</li>
+          <li>There is <strong>no daily refresh quota</strong> and no waiting period between refreshes —
+            you can refresh as often as you like.</li>
+          <li>There is no 2-hour cache delay: every refresh performs a fresh scrape.</li>
+          <li>Please still refresh only when you actually need to; each one sends live requests to the
+            college portal.</li>
         </ul>
 
         <h3>6. No Guarantee of Accuracy</h3>
@@ -101,8 +102,8 @@ export default function Terms() {
           <li>Donations are <strong>voluntary support for the project's running costs</strong>, not a
             purchase, subscription, or payment for any service.</li>
           <li>Supporting is optional: all core features remain free whether or not you donate.</li>
-          <li>Supporters receive non-monetary perks (a leaderboard badge, a higher daily refresh limit,
-            and optional recognition on the Supporters page).</li>
+          <li>Supporters receive non-monetary perks (a leaderboard badge and optional recognition on
+            the Supporters page).</li>
           <li>Proof of payment submitted through the app is reviewed manually before any perk is
             activated; a submission by itself does not grant supporter status.</li>
         </ul>

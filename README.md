@@ -25,8 +25,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 - **Stats grid** — overall %, can miss at 85%/75%, must attend at 85%/75%
 - **Custom calculator** — enter any target % to see how many classes you can miss
 - **Absent periods** — shows which classes you missed and when
-- **Refresh counter** — "X / Y refreshes left today" inside the Overall card
-- **Rate limiting** — 4 refreshes/day per user (6 for supporters), 2-hour TTL cache, daily reset
+- **Unlimited refreshes** — no daily quota, no waiting between refreshes
 - **Leaderboard** — opt-in, shows alias (not USN), attendance %, branch, rank
 - **Supporters wall** — month-wise cards of everyone who backed the project
 - **Donate page** — UPI QR + proof-of-payment upload form
@@ -57,7 +56,7 @@ Student opens app → enters Portal ID + password + alias → backend scrapes po
 
 - First visit: scrapes portal (~1-2s), caches result, returns JWT
 - Subsequent visits: cached data served instantly from localStorage
-- Refresh: re-scrapes portal (subject to rate limiting)
+- Refresh: always re-scrapes portal, returns fresh data
 - Login: always scrapes fresh, no limits
 
 ## Project Structure
@@ -114,7 +113,7 @@ Attendance-Tracker/
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
 | POST | `/scraper/login` | No | None | Scrape portal → cache → return JWT |
-| POST | `/scraper/refresh` | JWT | 4/day, 2hr TTL | Re-scrape with password |
+| POST | `/scraper/refresh` | JWT | None | Re-scrape with password |
 | GET | `/fetch_attendance/` | JWT | None | Cached attendance (incl. timetable) from DB |
 | GET | `/leaderboard` | JWT | None | Ranked opted-in users |
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
@@ -134,15 +133,15 @@ Attendance-Tracker/
 
 ## Rate Limiting
 
-- **Normal users:** 4 refreshes per day, 2-hour cache TTL, daily reset at midnight UTC
-- **Supporters:** 6 refreshes per day (activates once a donation is approved)
-- **Login:** always scrapes fresh, no limits
+**There are none.** No daily quota, no 2-hour TTL, no 429 — every login and
+every refresh performs a real scrape and returns fresh data.
 
 ## Scraping
 
 Each scrape replays the portal's own login and page requests in four HTTP
 calls — no browser, ~9 MB and ~1-2s per scrape — then caches the parsed result
-in PostgreSQL. Requests that arrive together simply run together.
+in PostgreSQL. Requests that arrive together simply run together — there is no
+cache to short-circuit them, so every request really does hit the portal.
 
 ## Getting Started
 
@@ -202,8 +201,6 @@ docker run -p 8000:8000 --env-file .env --network host attendance-backend
 | `OAUTH_ALGORITHM` | JWT algorithm (HS256) |
 | `ENCRYPTION_KEY` | Reserved, currently unused — any non-empty value |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
-| `FREE_REQUESTS_PER_DAY` | Daily refreshes per regular user (default `4`) |
-| `SUPPORTER_REQUESTS_PER_DAY` | Daily refreshes per supporter (default `6`) |
 | `DONATION_GOAL` | Monthly donation goal in ₹ (default `500`) |
 | `DONATIONS_UPLOAD_DIR` | Payment screenshot storage (default `backend/uploads/donations`) |
 

@@ -84,7 +84,7 @@ function App() {
     } catch {
       // corrupted cache — treat as non-supporter
     }
-    // Unified once-per-day gate, shared with the 429 trigger — no bypass
+    // Unified once-per-day gate — no bypass
     const today = new Date().toLocaleDateString('en-CA');
     return localStorage.getItem('popup_shown_date') === today;
   }
@@ -169,8 +169,6 @@ function App() {
       })
       .catch((err) => {
         setError(err.message);
-        // Out of refreshes → nudge through the same once-per-day popup gate
-        if (err.status === 429) openDonationPopup();
       })
       .finally(() => setLoading(false));
   }

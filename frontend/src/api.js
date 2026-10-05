@@ -15,7 +15,7 @@ async function request(path, options = {}) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Request failed' }));
     const error = new Error(err.detail || `HTTP ${res.status}`);
-    error.status = res.status; // callers can branch (e.g. 429 popup trigger)
+    error.status = res.status; // callers can branch on HTTP status
     throw error;
   }
 

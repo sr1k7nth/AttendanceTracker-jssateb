@@ -9,8 +9,8 @@ React + Vite frontend for the JSSATEB Attendance Tracker.
 - Loading spinner with a "few seconds" wait note during scraping
 - Weekly timetable grid (present / absent / upcoming per period)
 - Subject-wise attendance table (#, Code, Subject, Classes, Present, %)
-- Stats grid (Overall %, Can miss 85%/75%, Must attend 85%/75%) with the
-  "X / Y refreshes left today" counter inside the Overall card
+- Stats grid (Overall %, Can miss 85%/75%, Must attend 85%/75%) and a
+  Refresh button (no daily quota)
 - Custom attendance calculator (enter any target %)
 - Leaderboard with branch filter and IST timestamps
 - Supporters wall — month-wise cards, Anonymous donors included

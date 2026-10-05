@@ -20,10 +20,6 @@ class Settings(BaseSettings):
     # 503 "not configured" instead of letting anyone in (safe deploy default).
     ADMIN_PANEL_USERNAME: str = ""
     ADMIN_PANEL_PASSWORD: str = ""
-    # Daily scrape quota — premium (supporters) get more.
-    # 4/day for now to onboard users; flip to 2 later via .env (one line, no code).
-    FREE_REQUESTS_PER_DAY: int = 4
-    SUPPORTER_REQUESTS_PER_DAY: int = 6
 
     @property
     def database_url(self):

@@ -1,4 +1,3 @@
-from .config import settings
 from .database import Base
 from sqlalchemy import (
     Boolean,
@@ -33,8 +32,10 @@ class Attendance(Base):
     leaderboard_opt = Column(Boolean, default=False)
     sem = Column(Integer)
     branch = Column(String)
-    # Follows settings.FREE_REQUESTS_PER_DAY so a quota flip is .env-only
-    request_left = Column(Integer, default=lambda: settings.FREE_REQUESTS_PER_DAY)
+    # Legacy column from the old daily-quota feature. Nothing reads or writes it
+    # any more (there is no limit to count down); kept so the model still matches
+    # the live table without needing a migration.
+    request_left = Column(Integer, nullable=True)
     is_supporter = Column(
         Boolean, nullable=False, default=False, server_default=text("false")
     )

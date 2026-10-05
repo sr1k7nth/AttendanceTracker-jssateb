@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ADMIN_USN } from '../config';
 import Timetable from './Timetable';
 
 function pctColor(pct) {
@@ -50,14 +49,6 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
           >
             {loading ? 'Refreshing...' : 'Refresh'}
           </button>
-          {/* Request limit — lives inside the Overall box, under Refresh */}
-          {data.request_left !== undefined && (
-            <p className="request-left">
-              {localStorage.getItem('usn') === ADMIN_USN || data.request_left > (data.request_cap || 2)
-                ? 'Unlimited'
-                : `${data.request_left} / ${data.request_cap || 2}`} refreshes left today
-            </p>
-          )}
         </div>
         <div className="stat-card stat-row">
           <div className="stat-label">Can miss</div>
