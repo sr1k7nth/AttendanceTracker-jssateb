@@ -54,7 +54,7 @@ def _get_pending(donation_id: int, db: Session) -> Donation:
     row = db.query(Donation).filter(Donation.id == donation_id).first()
     if row is None:
         raise HTTPException(404, "Donation not found.")
-    if row.status != "pending":
+    if row.status != "pending":  # type: ignore
         raise HTTPException(409, f"Already reviewed (status={row.status}).")
     return row
 
@@ -75,8 +75,8 @@ def pending_donations(
             id=row.id,  # type: ignore
             usn=row.usn,  # type: ignore
             name=row.name,  # type: ignore
-            message=row.message,
-            admin_note=row.admin_note,
+            message=row.message,  # type: ignore
+            admin_note=row.admin_note,  # type: ignore
             amount=row.amount,  # type: ignore
             anonymous=row.anonymous,  # type: ignore
             created_at=row.created_at,  # type: ignore
@@ -122,9 +122,7 @@ def approve_donation(
     row.reviewed_at = datetime.now(timezone.utc)
     user.is_supporter = True  # type: ignore[assignment]
     db.commit()
-    logger.info(
-        "donation %d approved: usn=%s amount=%d", row.id, row.usn, row.amount
-    )
+    logger.info("donation %d approved: usn=%s amount=%d", row.id, row.usn, row.amount)
     return {
         "status": "approved",
         "usn": row.usn,
