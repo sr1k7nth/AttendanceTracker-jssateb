@@ -19,6 +19,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 
 ## Features
 
+- **Landing page** — tagline and Login button; returning users skip straight to the form
 - **Fast attendance check** — cached data loads instantly from localStorage
 - **Weekly timetable** — the week's period grid (present / absent / upcoming), straight from the portal
 - **Subject-wise table** — code, name, classes, present, percentage for each subject
@@ -32,6 +33,8 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 - **Donation progress** — monthly ₹500 goal bar with lifetime totals
 - **Support nudge** — popup on app opens 1, 3, 6, 9, 12… (at most once a day, never for supporters)
 - **Changelog** — what shipped and when
+- **Admin panel** — donation review queue (approve / reject proofs) behind a separate panel credential
+- **Nav menu** — FAQ, Terms and Changelog tucked behind a ☰ button
 - **Beta banner** — always-visible feedback link for bugs and feature requests
 - **Terms & Conditions** — full ToC page with login checkbox
 - **Dark/light theme** — persisted in localStorage
@@ -75,10 +78,10 @@ Attendance-Tracker/
 │   │       ├── scrape.py       # /scraper/login + /scraper/refresh
 │   │       ├── fetch_attendance.py  # /fetch_attendance
 │   │       ├── leaderboard.py  # /leaderboard
-│   │       └── donations.py    # /supporters + /supporters/progress + /donations
+│   │       ├── donations.py    # /supporters + /supporters/progress + /donations
+│   │       └── admin.py        # /admin/donations/* (review queue)
 │   ├── alembic/                # Database migrations
 │   ├── portal_client.py        # Portal scraper (plain HTTP) + parsers
-│   ├── timing_probe.py         # One-off scrape duration report
 │   ├── .env.example            # Template for environment settings
 │   ├── Dockerfile
 │   └── requirements.txt
@@ -88,6 +91,7 @@ Attendance-Tracker/
 │   │   ├── api.js              # API layer
 │   │   ├── config.js           # App constants
 │   │   ├── components/
+│   │   │   ├── Landing.jsx     # Landing page (tagline + Login)
 │   │   │   ├── Login.jsx       # Login form + alias + terms checkbox
 │   │   │   ├── AttendanceSummary.jsx  # Stats, calculator, timetable, subject table
 │   │   │   ├── Timetable.jsx   # Weekly period grid
@@ -99,6 +103,7 @@ Attendance-Tracker/
 │   │   │   ├── Changelog.jsx   # Version history
 │   │   │   ├── Faq.jsx         # FAQ page
 │   │   │   ├── Terms.jsx       # Terms & Conditions page
+│   │   │   ├── AdminPanel.jsx  # Donation review (approve / reject)
 │   │   │   └── BetaBanner.jsx  # Beta notice with feedback link
 │   │   └── index.css           # Full styles (dark/light theme)
 │   ├── public/
@@ -119,6 +124,10 @@ Attendance-Tracker/
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
 | GET | `/supporters/progress` | No | None | Donation progress (month + lifetime totals) |
 | POST | `/donations` | JWT | 5 MB max | Submit proof of payment → pending review |
+| GET | `/admin/donations/pending` | JWT + panel cred | None | Donation proofs awaiting review |
+| GET | `/admin/donations/{id}/screenshot` | JWT + panel cred | — | Original payment screenshot |
+| POST | `/admin/donations/{id}/approve` | JWT + panel cred | None | Approve → supporter perks apply |
+| POST | `/admin/donations/{id}/reject` | JWT + panel cred | None | Reject the proof |
 | GET | `/` | No | None | Health check |
 
 ## Security Model

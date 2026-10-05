@@ -29,7 +29,15 @@ The JSSATEB college ERP portal has **no public API**. It's an ASP.NET WebForms a
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
 | GET | `/supporters/progress` | No | None | Donation progress (month + lifetime totals) |
 | POST | `/donations` | JWT | 5 MB max | Submit name, amount, message, screenshot → pending review |
+| GET | `/admin/donations/pending` | JWT + panel cred | None | Donation proofs awaiting review |
+| GET | `/admin/donations/{id}/screenshot` | JWT + panel cred | — | Original payment screenshot |
+| POST | `/admin/donations/{id}/approve` | JWT + panel cred | None | Approve → supporter perks apply |
+| POST | `/admin/donations/{id}/reject` | JWT + panel cred | None | Reject the proof |
 | GET | `/` | No | None | Health check |
+
+Admin routes are double-gated: a valid admin JWT **and** the panel credential in
+`X-Admin-Auth` (base64 `user:pass`). With either missing the request is refused
+before it reaches the review logic.
 
 ## Rate Limiting
 
@@ -59,10 +67,14 @@ and every request that reaches the scraper really does hit the portal.
 Run it yourself:
 
 ```bash
-venv/bin/python portal_client.py --selftest        # parse the saved sample.html
 venv/bin/python portal_client.py <usn> <password>  # live scrape (or PORTAL_USN/PORTAL_PASSWORD)
+venv/bin/python portal_client.py --selftest        # parse a saved sample.html
 venv/bin/python timing_probe.py                    # duration over N runs
 ```
+
+The last two need `sample.html` and `timing_probe.py`, which are local-only
+files (see above) — copy a saved portal page to `backend/sample.html` first on a
+fresh clone.
 
 ## Project Structure
 
@@ -79,16 +91,21 @@ backend/
 │       ├── scrape.py        # /scraper/login + /scraper/refresh
 │       ├── fetch_attendance.py  # /fetch_attendance
 │       ├── leaderboard.py   # /leaderboard
-│       └── donations.py     # /supporters + /supporters/progress + /donations
+│       ├── donations.py     # /supporters + /supporters/progress + /donations
+│       └── admin.py         # /admin/donations/* (review queue)
 ├── alembic/                 # Database migrations
 ├── alembic.ini
 ├── portal_client.py          # Portal scraper (plain HTTP) + all HTML parsers
-├── timing_probe.py           # One-off scrape duration report
 ├── .env                     # Environment variables (not in git)
 ├── .env.example             # Template for the above
 ├── Dockerfile
 └── requirements.txt
 ```
+
+Everything in that tree is committed. A few developer-only files live alongside
+it but are **not**: `timing_probe.py`, `seed_donations.py`, and the saved portal
+pages `sample.html` / `sample_test.html` / `home.html` / `login.html` (ignored
+so raw portal HTML never lands in the repo).
 
 ## Database Schema
 

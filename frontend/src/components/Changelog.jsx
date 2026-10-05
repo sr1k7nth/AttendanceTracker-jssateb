@@ -1,5 +1,16 @@
 const versions = [
   {
+    version: 'v2.3',
+    date: 'Oct 5, 2026',
+    title: 'Plain-HTTP Scraper',
+    changes: [
+      'New scraper: the portal’s login and attendance pages are now fetched directly over plain HTTP instead of driving a headless browser — logins and refreshes take about a second instead of three or four',
+      'No more refresh limits: the daily quota and the 2-hour cache wait are gone, so you can refresh as often as you like, at any hour',
+      'The old supporter perk of 6 extra refreshes a day is retired — everyone is unlimited now; the ★ badge and the Supporters wall still mark who backs the project',
+      'Server runs on a fraction of the memory it used to, since no browser is launched per scrape',
+    ],
+  },
+  {
     version: 'v2.2',
     date: 'Sep 30, 2026',
     title: 'Supporters & Donations',

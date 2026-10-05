@@ -5,8 +5,11 @@ React + Vite frontend for the JSSATEB Attendance Tracker.
 ## Features
 
 - Dark/light theme toggle (persisted in localStorage)
+- Landing page with tagline and Login button (returning users skip to the form)
 - Login form with USN, password, alias, leaderboard opt-in, terms acceptance
-- Loading spinner with a "few seconds" wait note during scraping
+- Loading spinner with a "second or two" wait note while the scraper replays
+  the portal's login and attendance requests over HTTP
+- Nav menu (☰) — FAQ, Terms and Changelog tucked out of the navbar
 - Weekly timetable grid (present / absent / upcoming per period)
 - Subject-wise attendance table (#, Code, Subject, Classes, Present, %)
 - Stats grid (Overall %, Can miss 85%/75%, Must attend 85%/75%) and a
@@ -21,6 +24,8 @@ React + Vite frontend for the JSSATEB Attendance Tracker.
 - Supporter ★ badge (gold) beside names on the leaderboard
 - Back navigation on every page except the Summary tab
 - Changelog page
+- Admin panel — donation review queue (pending proofs, approve / reject,
+  screenshot preview) behind a separate panel credential
 - Beta banner with feedback link (Google Form)
 - Terms & Conditions page
 - FAQ page
@@ -47,8 +52,11 @@ frontend/
 │   ├── api.js               # API layer (fetch wrapper)
 │   ├── config.js            # App constants
 │   ├── index.css            # All styles (dark/light theme)
+│   ├── App.css              # Spare styles — not imported; index.css is the stylesheet
 │   ├── main.jsx             # Entry point
+│   ├── assets/              # Images and SVGs
 │   └── components/
+│       ├── Landing.jsx      # Landing page (tagline + Login)
 │       ├── Login.jsx        # Login form + terms checkbox + spinner
 │       ├── AttendanceSummary.jsx  # Stats, calculator, timetable, subject table
 │       ├── Timetable.jsx    # Weekly period grid
@@ -60,6 +68,7 @@ frontend/
 │       ├── Changelog.jsx    # Version history
 │       ├── Faq.jsx          # FAQ page
 │       ├── Terms.jsx        # Terms & Conditions page
+│       ├── AdminPanel.jsx   # Donation review (approve / reject)
 │       └── BetaBanner.jsx   # Beta notice with feedback link
 ├── public/
 │   ├── upi-qr.jpg           # UPI QR shown on the Donate page
@@ -109,14 +118,24 @@ All API calls go through `src/api.js`:
 | `fetchSupporters()` | `/supporters` | GET |
 | `fetchProgress()` | `/supporters/progress` | GET |
 | `submitDonation(formData)` | `/donations` | POST |
+| `adminListPending(user, pass)` | `/admin/donations/pending` | GET |
+| `adminApprove(id, amount, user, pass)` | `/admin/donations/{id}/approve` | POST |
+| `adminReject(id, user, pass)` | `/admin/donations/{id}/reject` | POST |
+| `fetchAdminScreenshot(id, user, pass)` | `/admin/donations/{id}/screenshot` | GET (blob) |
 | `getToken()` | — | reads localStorage |
+| `getTokenPayload()` | — | decodes the JWT without verifying it |
 | `logout()` | — | clears localStorage |
+
+Admin calls send **two** credentials: the normal `Authorization: Bearer` JWT
+plus `X-Admin-Auth` (base64 panel `user:pass`), because the `Authorization`
+header can only carry one scheme.
 
 ## State Management
 
 - **`loggedIn`** — derived from JWT in localStorage
 - **`attendance`** — initialized from localStorage cache, updated from API
 - **`sessionPassword`** — page memory only; cleared on reload, tab close, or logout. Legacy sessionStorage passwords are removed on app startup. After a reload, refreshing attendance redirects to login.
+- **`panel_creds`** — sessionStorage only, set solely by an admin-panel login. That's why the admin tab never appears for a normal visit or in another tab.
 - **`theme`** — localStorage (`dark` / `light`)
 - **`termsAccepted`** — localStorage (persists across sessions)
 - **`leaderboardOpt`** — localStorage (persists across sessions)

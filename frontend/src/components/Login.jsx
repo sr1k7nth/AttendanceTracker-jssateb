@@ -130,7 +130,7 @@ export default function Login({ onLogin, onPassword, onTerms, onBack }) {
         {loading && (
           <div className="login-loading">
             <div className="spinner" />
-            <p>Scraping your attendance data. This usually takes a few seconds.</p>
+            <p>Scraping your attendance data. This usually takes a second or two.</p>
           </div>
         )}
 

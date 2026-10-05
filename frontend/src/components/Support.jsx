@@ -131,8 +131,9 @@ export default function Support({ loggedIn, onLoginRequired }) {
       <ul className="perk-list">
         <li>Covers the monthly server and hosting bills that keep JA-Tracker online.</li>
         <li>
-          Pays for the portal automation infrastructure that powers every refresh.
-          Each refresh burns RAM on the server to scrape the attendance data.
+          Pays for the server that powers every refresh. Each one contacts the
+          college portal live and re-reads your attendance — there is no
+          shortcut or stale copy.
         </li>
         <li>Keeps the app free and ad-free for everyone, with no data ever sold.</li>
         <li>Funds small extras so the project can keep improving.</li>
