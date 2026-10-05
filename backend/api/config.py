@@ -35,8 +35,12 @@ class Settings(BaseSettings):
     SCRAPE_PROBE_PASSWORD: str = ""
     # RAM held back for Postgres + Python + OS before dividing up the rest.
     SCRAPE_SAFETY_MB: int = Field(default=200, ge=0)
-    # Upper bound on auto-calculated slots, however big the box is.
-    SCRAPE_MAX_SLOTS: int = Field(default=4, ge=1)
+    # Ceiling on auto-calculated slots, however big the box is. Deliberately
+    # generous so RAM decides in practice: this only ever LOWERS the answer
+    # (compute_slots does min(max_slots, ram_slots)), so it never fires unless
+    # something is wrong -- a bad measurement, or an absurd future box. Tune it
+    # DOWN per box via .env if you ever want fewer browsers than RAM allows.
+    SCRAPE_MAX_SLOTS: int = Field(default=32, ge=1)
 
     # --- donations / supporters ------------------------------------------
     DONATION_GOAL: int = 500
