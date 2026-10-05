@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..schemas import UserScrapeRequest, UserLogin, AttendanceResponse
-from scrapper import scrapper, LoginError
+from portal_client import scrapper, LoginError
 from ..models import Attendance as AttendanceModel
 from ..oauth import get_current_user
 from ..database import get_db
@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 from ..oauth import create_access_token
 import logging
 import secrets
-import threading
 import time
 
 router = APIRouter(prefix="/scraper", tags=["Scraper"])
@@ -19,27 +18,10 @@ ADMIN_USN = "JS240955"
 
 logger = logging.getLogger("scraper.queue")
 
-# The scrape queue: at most N live browsers may run at once — each spawns a
-# Chromium process hundreds of MB big, and a burst of concurrent ones would
-# OOM the box. Everyone else blocks here (costs zero RAM) until a slot frees.
-#
-# N is decided ONCE at startup, before any request is served:
-#   SCRAPE_CONCURRENCY > 0  -> manual, your .env value is used as-is
-#   SCRAPE_CONCURRENCY = 0  -> auto: run one test scrape (memory_probe.py),
-#                              divide free RAM by its measured cost
-#   auto mode failed        -> stays at the safe default of 1
-# It is never re-checked per-request, and it bounds BROWSERS, not users —
-# cached or quota-expired requests never acquire this semaphore at all.
-# Per-process too: with `--workers N` the real ceiling is N x the value here.
-#
-# BoundedSemaphore can't be resized, so this import-time value is a safe
-# placeholder (or the manual value); api/main.py swaps in the calibrated
-# object during the startup hook, which runs before uvicorn serves anyone.
-SCRAPE_SLOTS = threading.BoundedSemaphore(1)
-
-# Longest a request may WAIT IN LINE before we give up and answer
-# 503 "try again". Budget: ~17s wait + ~7s own scrape ≈ 24s absolute max.
-QUEUE_TIMEOUT_SECONDS = 17.0
+# No concurrency limiter here any more: each scrape is four HTTP requests
+# costing ~9 MB and ~1s, so a burst of them neither exhausts RAM nor needs a
+# queue to arbitrate — requests that arrive together simply run together.
+# Cached and quota-expired requests never reach the scraper at all.
 
 
 def _reset_if_new_day(user):
@@ -66,38 +48,21 @@ def _scrape_and_cache(
     leaderboard_opt: bool = False,
     alias: str | None = None,
 ):
-    # -- queue for a scrape slot -----------------------------------------
-    queued_at = time.perf_counter()
-    if not SCRAPE_SLOTS.acquire(timeout=QUEUE_TIMEOUT_SECONDS):
-        logger.warning(
-            "queue full after %.1fs (usn=%s) -> 503",
-            time.perf_counter() - queued_at,
-            usn,
-        )
-        raise HTTPException(
-            503, detail="Server is busy right now — try again in a moment."
-        ) from None
-    queue_wait = time.perf_counter() - queued_at
+    scrape_started = time.perf_counter()
     try:
-        scrape_started = time.perf_counter()
-        try:
-            data = scrapper(usn, password)
-        except LoginError:
-            raise HTTPException(401, detail="Invalid credentials") from None
-        except Exception:
-            # Hide sensitive scraper errors
-            raise HTTPException(
-                502, detail="Portal unavailable. Try again later."
-            ) from None
-        logger.info(
-            "scrape ok (usn=%s): queued %.1fs, scraped %.1fs",
-            usn,
-            queue_wait,
-            time.perf_counter() - scrape_started,
-        )
-    finally:
-        SCRAPE_SLOTS.release()
-    # -- end queue -------------------------------------------------------
+        data = scrapper(usn, password)
+    except LoginError:
+        raise HTTPException(401, detail="Invalid credentials") from None
+    except Exception:
+        # Hide sensitive scraper errors
+        raise HTTPException(
+            502, detail="Portal unavailable. Try again later."
+        ) from None
+    logger.info(
+        "scrape ok (usn=%s): %.1fs",
+        usn,
+        time.perf_counter() - scrape_started,
+    )
 
     if data.get("status") == "error":
         raise HTTPException(401, detail="Invalid credentials")

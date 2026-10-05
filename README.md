@@ -15,7 +15,7 @@ The JSSATEB college ERP portal is an AJAX-heavy application with **no public API
 
 This is painful on mobile, slow on bad networks, and impossible to integrate with other tools.
 
-**This app solves that** by using Playwright (headless browser automation) to scrape attendance data from the portal and serve it as a clean, fast JSON API. Students open the app, see their attendance. Done.
+**This app solves that** by replaying the portal's own login and page requests over plain HTTP and serving the result as a clean, fast JSON API. Students open the app, see their attendance. Done.
 
 ## Features
 
@@ -42,7 +42,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 
 | Layer | Tech | Hosting |
 |-------|------|---------|
-| Backend | FastAPI + Playwright + SQLAlchemy | Ubuntu server (systemd) |
+| Backend | FastAPI + httpx + SQLAlchemy | Ubuntu server (systemd) |
 | Database | PostgreSQL 18 | same server (localhost) |
 | Frontend | React + Vite | Vercel |
 | Auth | JWT (PyJWT, 7-day tokens) | — |
@@ -55,7 +55,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 Student opens app → enters Portal ID + password + alias → backend scrapes portal → caches in PostgreSQL → returns JSON
 ```
 
-- First visit: scrapes portal (~20-25s), caches result, returns JWT
+- First visit: scrapes portal (~1-2s), caches result, returns JWT
 - Subsequent visits: cached data served instantly from localStorage
 - Refresh: re-scrapes portal (subject to rate limiting)
 - Login: always scrapes fresh, no limits
@@ -78,9 +78,8 @@ Attendance-Tracker/
 │   │       ├── leaderboard.py  # /leaderboard
 │   │       └── donations.py    # /supporters + /supporters/progress + /donations
 │   ├── alembic/                # Database migrations
-│   ├── scrapper.py             # Playwright scraper logic
-│   ├── memory_probe.py         # RAM measurement for scrape-slot calibration
-│   ├── ram_probe.py            # Manual one-off RAM report
+│   ├── portal_client.py        # Portal scraper (plain HTTP) + parsers
+│   ├── timing_probe.py         # One-off scrape duration report
 │   ├── .env.example            # Template for environment settings
 │   ├── Dockerfile
 │   └── requirements.txt
@@ -139,21 +138,11 @@ Attendance-Tracker/
 - **Supporters:** 6 refreshes per day (activates once a donation is approved)
 - **Login:** always scrapes fresh, no limits
 
-## Scrape Concurrency
+## Scraping
 
-Every scrape opens a Chromium process, so concurrent scrapes are capped to keep
-the box from running out of RAM. The cap is decided **once at startup**, before
-the first request — never per-request:
-
-- `SCRAPE_CONCURRENCY=0` (default) — **auto**: the app runs one test scrape,
-  measures what it actually costs in RAM, and divides the server's free memory
-  by that number. Re-measures on every restart.
-- `SCRAPE_CONCURRENCY>0` — **manual**: that exact number is used, no probing.
-- Auto mode fails (no test credentials, portal down) — logs a warning and boots
-  with `1` rather than blocking startup.
-
-The cap limits **browsers, not users** — requests served from the 2-hour cache
-never touch it. See `backend/README.md` for the details.
+Each scrape replays the portal's own login and page requests in four HTTP
+calls — no browser, ~9 MB and ~1-2s per scrape — then caches the parsed result
+in PostgreSQL. Requests that arrive together simply run together.
 
 ## Getting Started
 
@@ -164,7 +153,6 @@ cd backend
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-playwright install chromium
 cp .env.example .env  # fill in your values
 fastapi dev api/main.py
 ```
@@ -214,11 +202,6 @@ docker run -p 8000:8000 --env-file .env --network host attendance-backend
 | `OAUTH_ALGORITHM` | JWT algorithm (HS256) |
 | `ENCRYPTION_KEY` | Reserved, currently unused — any non-empty value |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
-| `SCRAPE_CONCURRENCY` | Live browser scrapes allowed at once. **`0` (default) = auto**: at startup the app runs one test scrape, measures its RAM cost and computes the slot count from free memory (re-runs every restart). **`> 0` = manual**: use that number as-is, no probing. If auto-calibration fails it falls back to `1`. |
-| `SCRAPE_PROBE_USN` | Test account USN for auto-calibration (no DB writes, no quota). Unset = auto mode falls back to `1` |
-| `SCRAPE_PROBE_PASSWORD` | Test account password for auto-calibration |
-| `SCRAPE_SAFETY_MB` | RAM held back for Postgres + Python + OS before dividing up the rest (default `200`) |
-| `SCRAPE_MAX_SLOTS` | Upper bound on auto-calculated slots, however big the box (default `4`) |
 | `FREE_REQUESTS_PER_DAY` | Daily refreshes per regular user (default `4`) |
 | `SUPPORTER_REQUESTS_PER_DAY` | Daily refreshes per supporter (default `6`) |
 | `DONATION_GOAL` | Monthly donation goal in ₹ (default `500`) |

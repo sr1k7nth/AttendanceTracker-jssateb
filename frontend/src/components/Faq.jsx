@@ -1,7 +1,7 @@
 const faqItems = [
   {
-    q: 'Why is login slow?',
-    a: 'It launches a headless browser that logs into the college portal, navigates to your attendance page, and scrapes the data. This takes 15-25 seconds because the portal itself is slow.',
+    q: 'Why does login take a moment?',
+    a: 'The server replays the college portal’s own login and attendance requests over HTTP — no browser involved — and parses the result. That usually takes a second or two; when the portal itself is slow, so are we.',
   },
   {
     q: 'Is my password stored?',

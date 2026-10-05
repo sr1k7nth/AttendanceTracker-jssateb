@@ -6,7 +6,7 @@ React + Vite frontend for the JSSATEB Attendance Tracker.
 
 - Dark/light theme toggle (persisted in localStorage)
 - Login form with USN, password, alias, leaderboard opt-in, terms acceptance
-- Loading spinner with "20-25 seconds" wait note during scraping
+- Loading spinner with a "few seconds" wait note during scraping
 - Weekly timetable grid (present / absent / upcoming per period)
 - Subject-wise attendance table (#, Code, Subject, Classes, Present, %)
 - Stats grid (Overall %, Can miss 85%/75%, Must attend 85%/75%) with the

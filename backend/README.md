@@ -1,17 +1,18 @@
 # Attendance Tracker — Backend
 
-FastAPI backend that scrapes JSSATEB's college portal for attendance data using Playwright.
+FastAPI backend that scrapes JSSATEB's college portal for attendance data over plain HTTP.
 
 ## Why This Exists
 
-The JSSATEB college ERP portal has **no public API**. It's an AJAX-heavy application that requires browser automation to extract data. This backend uses Playwright (headless Chromium) to log into the portal, scrape attendance data, and serve it as a clean JSON API.
+The JSSATEB college ERP portal has **no public API**. It's an ASP.NET WebForms application whose login and pages are driven by ordinary form submissions — so this backend replays those same requests with `httpx` instead of driving a browser, parses the HTML, and serves it as a clean JSON API.
 
 ## Tech Stack
 
 | Component | Tech |
 |-----------|------|
 | Framework | FastAPI |
-| Browser Automation | Playwright + Chromium |
+| HTTP client | httpx + BeautifulSoup/lxml |
+| Crypto | `cryptography` (RSA for the portal's login form) |
 | Database | PostgreSQL 18 (SQLAlchemy + Alembic) |
 | Auth | JWT (PyJWT) |
 | Container | Docker |
@@ -46,39 +47,34 @@ Refresh request → check daily reset → check TTL (< 2hr → cached) → check
 
 Quotas come from `.env` (`FREE_REQUESTS_PER_DAY`, `SUPPORTER_REQUESTS_PER_DAY`), so flipping 4 → 2 later is a one-line change.
 
-## Scrape Queue Auto-Calibration
+## How a scrape works
 
-Each scrape launches a Chromium process, and concurrent ones would exhaust the
-box's RAM. The semaphore limiting them (`SCRAPE_SLOTS` in `api/routes/scrape.py`)
-is sized **once at startup, before any request is served** — never per-request.
+Each scrape is four HTTP requests — no browser, **~9 MB and ~1-2s** — parsed by
+the shared functions in `portal_client.py`:
 
-| `SCRAPE_CONCURRENCY` | Behaviour |
-|---|---|
-| `> 0` (e.g. `1`) | **Manual** — your number is used as-is, no probing. Existing `.env` files keep working unchanged. |
-| `0` (default) | **Auto** — run one test scrape with `SCRAPE_PROBE_USN`/`_PASSWORD`, measure its real RAM cost, read `MemAvailable` from `/proc/meminfo`, and compute `slots = (available − SCRAPE_SAFETY_MB) ÷ cost`, clamped to `[1, SCRAPE_MAX_SLOTS]`. Re-measures on every restart. |
-| `0` + anything fails | **Fallback** — no credentials, portal down, bad password, timeout: log a warning and boot with `1`. Calibration failure never blocks startup. |
+| # | Request | What it gets |
+|---|---------|--------------|
+| 1 | `GET /RApps/Home/login.aspx` | `__VIEWSTATE` + the RSA public key |
+| 2 | `GET /RApps/Home/HSData.aspx` | the `SUCCESS<cKey>` pre-check reply |
+| 3 | `POST /RApps/Home/login.aspx` | the real login (USN and password RSA'd) |
+| 4 | `GET /apps/TimeTable/StudentAttendance.aspx` + `POST …/StudentAttendanceSummary.aspx` | the timetable and the summary |
 
-Details:
+There is no concurrency cap: requests that arrive together simply run together.
 
-- The probe calls `scrapper()` directly — it creates **no DB rows** and consumes
-  **none of the daily quota**, so the test account is unaffected.
-- `BoundedSemaphore` can't be resized, so `scrape.py` builds a placeholder at
-  import and `api/main.py` swaps in the real one during the startup hook. Safe
-  because uvicorn isn't accepting requests yet.
-- The count bounds **browsers, not users**: cached or quota-expired requests
-  never acquire the semaphore.
-- Per-process: with `--workers N`, the real ceiling is `N ×` this value.
-- Check what it decided: `journalctl -u fastapi | grep "scrape slots"`.
+Run it yourself:
 
-To see the per-scrape cost yourself: `venv/bin/python ram_probe.py` (needs
-`backend/.portal_creds`). That number is exactly what auto mode divides by.
+```bash
+venv/bin/python portal_client.py --selftest        # parse the saved sample.html
+venv/bin/python portal_client.py <usn> <password>  # live scrape (or PORTAL_USN/PORTAL_PASSWORD)
+venv/bin/python timing_probe.py                    # duration over N runs
+```
 
 ## Project Structure
 
 ```
 backend/
 ├── api/
-│   ├── main.py              # FastAPI app + CORS + startup (tables + slot calibration)
+│   ├── main.py              # FastAPI app + CORS + startup (table creation)
 │   ├── models.py            # SQLAlchemy models (Attendance, Donation)
 │   ├── schemas.py           # Pydantic schemas (request/response)
 │   ├── database.py          # DB engine + session
@@ -91,9 +87,8 @@ backend/
 │       └── donations.py     # /supporters + /supporters/progress + /donations
 ├── alembic/                 # Database migrations
 ├── alembic.ini
-├── scrapper.py              # Playwright scraper logic
-├── memory_probe.py          # RAM measuring used to size the scrape queue
-├── ram_probe.py             # Manual one-off report built on memory_probe
+├── portal_client.py          # Portal scraper (plain HTTP) + all HTML parsers
+├── timing_probe.py           # One-off scrape duration report
 ├── .env                     # Environment variables (not in git)
 ├── .env.example             # Template for the above
 ├── Dockerfile
@@ -158,11 +153,6 @@ See `.env.example` for a copyable template.
 | `OAUTH_ALGORITHM` | JWT algorithm (HS256) |
 | `ENCRYPTION_KEY` | Reserved, currently unused — any non-empty value |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
-| `SCRAPE_CONCURRENCY` | Live browser scrapes allowed at once. **`0` (default) = auto**: at startup the app runs one test scrape, measures its RAM cost and computes the slot count from free memory (re-runs every restart). **`> 0` = manual**: use that number as-is, no probing. If auto-calibration fails it falls back to `1`. |
-| `SCRAPE_PROBE_USN` | Test account USN for auto-calibration (no DB writes, no quota). Unset = auto mode falls back to `1` |
-| `SCRAPE_PROBE_PASSWORD` | Test account password for auto-calibration |
-| `SCRAPE_SAFETY_MB` | RAM held back for Postgres + Python + OS before dividing up the rest (default `200`) |
-| `SCRAPE_MAX_SLOTS` | Upper bound on auto-calculated slots, however big the box (default `4`) |
 | `FREE_REQUESTS_PER_DAY` | Daily refreshes per regular user (default `4`) |
 | `SUPPORTER_REQUESTS_PER_DAY` | Daily refreshes per supporter (default `6`) |
 | `DONATION_GOAL` | Monthly donation goal in ₹ (default `500`) |
@@ -177,7 +167,6 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-playwright install chromium
 
 # Set up environment
 cp .env.example .env  # fill in your values
@@ -222,28 +211,29 @@ alembic current
 
 ## Scraper Details
 
-The Playwright scraper (`scrapper.py`) handles:
+The scraper (`portal_client.py`) handles:
 
-1. **Login** — fills USN + password on ASP.NET form, clicks login button
-2. **Error detection** — checks `#divModelValidation_alertmsg` for invalid credentials
-3. **Navigation** — clicks attendance link, waits for "Student Attendance" text
-4. **Summary extraction** — clicks Summary button, parses `table.fancyTable`
-5. **Absent periods** — parses absent period table if present
+1. **Login** — replays the portal's own three-step login: fetch the form, call the `HSData.aspx` CHECKCOLLEGE pre-check, then POST the form
+2. **Error detection** — the pre-check answers `FAILED<message>` for bad credentials → `LoginError` → 401
+3. **Navigation** — a plain GET of the attendance page
+4. **Summary extraction** — POSTs the `ENTRYFOR` token embedded in the Summary button, parses `table.fancyTable`
+5. **Absent periods** — derived from the parsed timetable (one parser, one source of truth)
 6. **Weekly timetable** — parses the week's period grid with per-period status
-7. **Branch/semester** — extracts from dropdown selectors
+7. **Branch/semester** — extracts from the `cboStudentSessionDetail` dropdown
 
 **Known quirks:**
-- Portal uses ASP.NET `__doPostBack` AJAX redirects (no full navigation events)
-- `networkidle` never resolves due to persistent background AJAX connections
-- Uses `time.sleep(3)` + `wait_for_selector` instead of `expect_navigation`
-- Playwright's `TimeoutError` is different from Python's built-in `TimeoutError`
+- The USN goes **plaintext** to `HSData.aspx` but **RSA'd** to the login POST — `submitForm_CG` reads `#txtUserID` at line 108, *before* `submitForm` encrypts it at line 210
+- The password is RSA'd exactly once, in the pre-check: `cboCKey` is absent, so the form does not re-encrypt
+- `txtHCKey` must carry the `SUCCESS` payload into the login POST or the portal rejects it
+- The attendance path resolves to `/apps/...` at the site **root** — the home cards call `../../apps/...` from `/RApps/Home/`, which is two levels up. `/RApps/apps/...` returns `GenericErrorPage.aspx`
+- Both RSA calls are PKCS#1 v1.5 + base64, matching JSEncrypt's `encrypt()`
 
 ## Security
 
 - **Passwords are not persisted.** The backend uses passwords for each scrape without saving them. Request models mask passwords, validation responses omit submitted values, and scraper failures return generic errors without logging their details.
 - **Leaderboard privacy:** responses contain only alias, attendance percentage, branch, timestamp, rank, and an `is_me` flag. Portal IDs and detailed attendance records are excluded.
 - **Payment proofs:** screenshots are stored outside any statically served directory; the public supporters wall only ever sees approved names and messages.
-- **Scraper diagnostics:** automatic screenshots are disabled. Keep Playwright debug logging, request-body logging, and tracing disabled in deployment because they can capture credentials.
+- **Scraper diagnostics:** `httpx` logs request URLs at `INFO`, and the portal pre-check carries the USN and the RSA'd password in its query string — `api/main.py` sets the `httpx` logger to `WARNING` so credentials never reach `journalctl`.
 - **JWT tokens** expire after 7 days. Used to identify users and protect cached data.
 - **Only attendance data is scraped** — no fees, no personal info, no other portal data.
 - **Open source** — full codebase on GitHub.

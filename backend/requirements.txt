@@ -6,6 +6,7 @@ pydantic-settings
 PyJWT
 beautifulsoup4
 lxml
-playwright
+httpx
+cryptography
 alembic
 python-multipart

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright/python:v1.62.0-noble
+FROM python:3.14-slim
 WORKDIR /app
 COPY . .
 RUN pip install -r requirements.txt
