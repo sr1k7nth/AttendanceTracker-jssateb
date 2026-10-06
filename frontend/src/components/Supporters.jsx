@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchSupporters } from '../api';
+import { fetchSupporters, fetchProgress } from '../api';
+import ProgressBar from './ProgressBar';
 
 // Group by month (IST, matching the rest of the app) while keeping the
 // backend's newest-first order.
@@ -30,6 +31,7 @@ export default function Supporters({ onDonate }) {
   const [supporters, setSupporters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState(null);
 
   useEffect(() => {
     fetchSupporters()
@@ -38,10 +40,23 @@ export default function Supporters({ onDonate }) {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    fetchProgress()
+      .then(setProgress)
+      .catch(() => {});
+  }, []);
+
   const groups = buildGroups(supporters);
 
   return (
     <div className="supporters-page">
+      {progress && (
+        <ProgressBar
+          raised={progress.month_raised}
+          goal={progress.goal}
+          count={progress.month_count}
+        />
+      )}
       <h2>Supporters</h2>
       <p className="supporters-intro">
         People who chipped in to keep JA-Tracker running 🙏
