@@ -59,8 +59,7 @@ Student opens app → enters Portal ID + password + alias → backend scrapes po
 
 - First visit: scrapes portal (~1-2s), caches result, returns JWT
 - Subsequent visits: cached data served instantly from localStorage
-- Refresh: always re-scrapes portal, returns fresh data
-- Login: always scrapes fresh, no limits
+- Updating data: log in again — every login re-scrapes fresh, no limits
 
 ## Project Structure
 
@@ -75,7 +74,7 @@ Attendance-Tracker/
 │   │   ├── config.py           # Environment settings
 │   │   ├── oauth.py            # JWT creation + validation
 │   │   └── routes/
-│   │       ├── scrape.py       # /scraper/login + /scraper/refresh
+│   │       ├── scrape.py       # /scraper/login
 │   │       ├── fetch_attendance.py  # /fetch_attendance
 │   │       ├── leaderboard.py  # /leaderboard
 │   │       ├── donations.py    # /supporters + /supporters/progress + /donations
@@ -118,7 +117,6 @@ Attendance-Tracker/
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
 | POST | `/scraper/login` | No | None | Scrape portal → cache → return JWT |
-| POST | `/scraper/refresh` | JWT | None | Re-scrape with password |
 | GET | `/fetch_attendance/` | JWT | None | Cached attendance (incl. timetable) from DB |
 | GET | `/leaderboard` | JWT | None | Ranked opted-in users |
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
@@ -132,7 +130,7 @@ Attendance-Tracker/
 
 ## Security Model
 
-1. **No persistent password storage** — passwords stay in page memory for login and refreshes; reloading or logging out clears them. The backend uses them for each scrape without saving them.
+1. **No persistent password storage** — the password is sent once per login and dropped; it is never kept in browser storage or on the server. Updating attendance means logging in again.
 2. **JWT-based auth** — 7-day tokens, no server-side sessions
 3. **Leaderboard privacy** — leaderboard shows alias, attendance %, branch, rank. Portal IDs and detailed records are never shared.
 4. **Only attendance data is scraped** — no fees, no personal info
@@ -142,8 +140,8 @@ Attendance-Tracker/
 
 ## Rate Limiting
 
-**There are none.** No daily quota, no 2-hour TTL, no 429 — every login and
-every refresh performs a real scrape and returns fresh data.
+**There are none.** No daily quota, no 2-hour TTL, no 429 — every login
+performs a real scrape and returns fresh data.
 
 ## Scraping
 

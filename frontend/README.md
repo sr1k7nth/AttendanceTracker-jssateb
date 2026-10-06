@@ -12,8 +12,8 @@ React + Vite frontend for the JSSATEB Attendance Tracker.
 - Nav menu (☰) — FAQ, Terms and Changelog tucked out of the navbar
 - Weekly timetable grid (present / absent / upcoming per period)
 - Subject-wise attendance table (#, Code, Subject, Classes, Present, %)
-- Stats grid (Overall %, Can miss 85%/75%, Must attend 85%/75%) and a
-  Refresh button (no daily quota)
+- Stats grid (Overall %, Can miss 85%/75%, Must attend 85%/75%) and an
+  Update button (re-scrape via a fresh login, no daily quota)
 - Custom attendance calculator (enter any target %)
 - Leaderboard with branch filter and IST timestamps
 - Supporters wall — month-wise cards, Anonymous donors included
@@ -30,7 +30,7 @@ React + Vite frontend for the JSSATEB Attendance Tracker.
 - Terms & Conditions page
 - FAQ page
 - localStorage caching (instant load on return visits)
-- Hybrid refresh (session password or redirect to login)
+- Update button — re-scrapes by sending you back to the login form
 - Sticky footer
 
 ## Tech Stack
@@ -112,7 +112,6 @@ All API calls go through `src/api.js`:
 | Function | Endpoint | Method |
 |----------|----------|--------|
 | `login(usn, password, leaderboardOpt, alias)` | `/scraper/login` | POST |
-| `refreshAttendance(password)` | `/scraper/refresh` | POST |
 | `fetchAttendance()` | `/fetch_attendance/` | GET |
 | `fetchLeaderboard(sort, branch)` | `/leaderboard` | GET |
 | `fetchSupporters()` | `/supporters` | GET |
@@ -134,7 +133,7 @@ header can only carry one scheme.
 
 - **`loggedIn`** — derived from JWT in localStorage
 - **`attendance`** — initialized from localStorage cache, updated from API
-- **`sessionPassword`** — page memory only; cleared on reload, tab close, or logout. Legacy sessionStorage passwords are removed on app startup. After a reload, refreshing attendance redirects to login.
+- **Password** — never stored anywhere; sent once per login and dropped. Updating attendance means logging in again. A legacy `sessionPassword` key is cleared on startup.
 - **`panel_creds`** — sessionStorage only, set solely by an admin-panel login. That's why the admin tab never appears for a normal visit or in another tab.
 - **`theme`** — localStorage (`dark` / `light`)
 - **`termsAccepted`** — localStorage (persists across sessions)

@@ -46,8 +46,9 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
             className="stat-refresh"
             onClick={onRefresh}
             disabled={loading}
+            title="The portal password is never stored, so updating means logging in again"
           >
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? 'Updating...' : 'Update'}
           </button>
         </div>
         <div className="stat-card stat-row">

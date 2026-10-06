@@ -12,8 +12,7 @@ function loadImageEl(url) {
   });
 }
 
-// Shrink to ~1200px longest edge and re-encode as JPEG (q≈0.82) on-device —
-// keeps uploads small (server also caps at 5 MB) and saves mobile data.
+// Shrink to ~1200px and re-encode as JPEG on-device to keep uploads small.
 async function compressImage(file) {
   if (!file.type || !file.type.startsWith('image/')) {
     throw new Error('Attach an image file (screenshot of the payment).');
@@ -95,8 +94,7 @@ export default function Support({ loggedIn, onLoginRequired }) {
     try {
       const jpg = await compressImage(file);
       const fd = new FormData();
-      // Name is always required (admin needs to know who paid); the
-      // `anonymous` flag only masks it on the public wall.
+      // Name identifies the payment; `anonymous` masks it on the wall.
       fd.append('name', trimmed);
       fd.append('amount', String(amt));
       fd.append('message', message.trim());
@@ -131,9 +129,9 @@ export default function Support({ loggedIn, onLoginRequired }) {
       <ul className="perk-list">
         <li>Covers the monthly server and hosting bills that keep JA-Tracker online.</li>
         <li>
-          Pays for the server that powers every refresh. Each one contacts the
-          college portal live and re-reads your attendance — there is no
-          shortcut or stale copy.
+          Pays for the server behind every login. Each one contacts the
+          college portal live and re-reads your attendance — no shortcut
+          or stale copy.
         </li>
         <li>Keeps the app free and ad-free for everyone, with no data ever sold.</li>
         <li>Funds small extras so the project can keep improving.</li>

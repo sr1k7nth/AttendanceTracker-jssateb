@@ -1,5 +1,17 @@
 const versions = [
   {
+    version: 'v2.4',
+    date: 'Oct 6, 2026',
+    title: 'Refresh Becomes Update',
+    changes: [
+      'The Refresh button is now Update — your portal password is never stored anywhere, so getting new attendance means logging in again',
+      'The password is dropped as soon as it is sent: not kept in cookies, browser storage, or page memory',
+      'The separate refresh route is gone — logging in is the only thing that re-reads the portal, and it always pulls fresh data',
+      '"Try again" on the error screen now reloads your saved data instead of asking for a password',
+      'FAQ, Terms and Support copy updated to match',
+    ],
+  },
+  {
     version: 'v2.3',
     date: 'Oct 5, 2026',
     title: 'Plain-HTTP Scraper',

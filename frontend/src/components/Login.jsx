@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { login } from '../api';
 
-export default function Login({ onLogin, onPassword, onTerms, onBack }) {
+export default function Login({ onLogin, onTerms, onBack }) {
   const [usn, setUsn] = useState(() => localStorage.getItem('usn') || '');
   const [password, setPassword] = useState('');
   const [alias, setAlias] = useState(() => localStorage.getItem('alias') || '');
@@ -28,7 +28,6 @@ export default function Login({ onLogin, onPassword, onTerms, onBack }) {
     setError('');
     try {
       await login(usn, password, leaderboardOpt, alias.trim());
-      onPassword(password);
       onLogin();
     } catch (err) {
       setError(err.message);

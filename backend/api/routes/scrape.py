@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from ..schemas import UserScrapeRequest, UserLogin, AttendanceResponse
+from ..schemas import UserLogin
 from portal_client import scrapper, LoginError
 from ..models import Attendance as AttendanceModel
-from ..oauth import get_current_user
 from ..database import get_db
 from ..config import settings
 from datetime import datetime, timezone
@@ -18,10 +17,7 @@ ADMIN_USN = "JS240955"
 
 logger = logging.getLogger("scraper.queue")
 
-# No concurrency limiter, no rate limit, no TTL: every login and every refresh
-# performs a real scrape. Each one is four HTTP requests costing ~9 MB and ~1s,
-# so a burst of them neither exhausts RAM nor needs a queue to arbitrate —
-# requests that arrive together simply run together.
+# Each login re-scrapes live; no rate limit. No /scraper/refresh — the portal password is never stored.
 
 
 def _scrape_and_cache(
@@ -93,10 +89,7 @@ def _scrape_and_cache(
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    # Hidden admin session: the panel credentials typed into the ordinary
-    # login page open the review queue. There is no admin link anywhere
-    # else, and nothing matches here while ADMIN_PANEL_* is unset.
-    # (Case-insensitive because the USN field uppercases what you type.)
+    # Panel creds typed on the normal login form open the review queue.
     panel_user = settings.ADMIN_PANEL_USERNAME
     panel_pass = settings.ADMIN_PANEL_PASSWORD
     if (
@@ -119,19 +112,3 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
     )
     return {"token": token, "data": data}
-
-
-@router.post("/refresh", response_model=AttendanceResponse)
-def refresh(
-    user_data: UserScrapeRequest,
-    current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    user = db.query(AttendanceModel).filter(AttendanceModel.usn == current_user).first()
-
-    if user is None:
-        raise HTTPException(status_code=401, detail="Register/Login first")
-    # Always a fresh scrape — no TTL, no daily quota.
-    _scrape_and_cache(current_user, user_data.password.get_secret_value(), db)
-    db.refresh(user)
-    return user

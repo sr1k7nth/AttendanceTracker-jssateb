@@ -5,15 +5,15 @@ const faqItems = [
   },
   {
     q: 'Is my password stored?',
-    a: 'Your password stays in this page’s memory for login and refreshes. The app does not save it in browser storage, a database, or a file. Reloading, closing the tab, or logging out clears it. After reloading, refreshing attendance requires another login.',
+    a: 'No. It is sent once when you log in and never saved — not in browser storage, a database, or a file. Because nothing is kept, getting updated attendance means logging in again.',
   },
   {
     q: 'What is Summary?',
     a: 'Shows your overall attendance percentage, how many classes you can still miss (to stay above 85% and 75%), subject-wise breakdown, and a list of your absent periods.',
   },
   {
-    q: 'What is Refresh?',
-    a: 'Re-scrapes the college portal with your credentials to get the latest attendance data. Useful after new attendance has been marked.',
+    q: 'What does Update do?',
+    a: 'Logs you in again so the portal can be re-scraped. Your password is never stored, so this is the only way to fetch newly marked attendance.',
   },
   {
     q: 'What is the Leaderboard?',

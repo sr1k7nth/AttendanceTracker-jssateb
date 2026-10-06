@@ -36,10 +36,7 @@ export async function login(usn, password, leaderboardOpt, alias) {
   localStorage.setItem('alias', alias);
   localStorage.setItem('leaderboard_opt', JSON.stringify(leaderboardOpt));
   if (data.admin) {
-    // Panel-credential session: the sole key that ever reveals the admin
-    // menu/tab. Kept per-tab (sessionStorage), so a normal visit — even on
-    // this account — and other tabs never see it. Stored lowercased because
-    // the USN field uppercases whatever is typed.
+    // Panel creds stay in sessionStorage, so the admin tab is per-tab only.
     localStorage.setItem('usn', data.usn);
     sessionStorage.setItem(
       'panel_creds',
@@ -73,13 +70,6 @@ export function getTokenPayload() {
   } catch {
     return null;
   }
-}
-
-export async function refreshAttendance(password) {
-  return request('/scraper/refresh', {
-    method: 'POST',
-    body: JSON.stringify({ password }),
-  });
 }
 
 export function logout() {

@@ -8,8 +8,8 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 
 ## 2. Credentials & Security
 
-- Your college portal password is sent to the backend for login and attendance refreshes. The backend uses it to authenticate with the portal without saving it to a database or file.
-- The app keeps the password only in page memory, not browser storage. Reloading, closing the tab, or logging out clears it. After reloading, refreshing attendance requires another login.
+- Your college portal password is sent to the backend when you log in. The backend uses it to authenticate with the portal without saving it to a database or file.
+- The password is used for that one request and then dropped — it is never kept in cookies, localStorage or sessionStorage, and is not held in page memory either. Fetching updated attendance therefore always means logging in again.
 - I do not have access to any other college systems, emails, or internal services.
 
 ## 3. Data Collected
@@ -25,9 +25,9 @@ This is a student-built tool that fetches your attendance data from the JSSATEB 
 
 ## 5. No Usage Limits
 
-- There is **no daily refresh quota** and no waiting period between refreshes — you can refresh as often as you like.
-- There is no 2-hour cache delay: every refresh performs a fresh scrape.
-- Please still refresh only when you actually need to; each one sends live requests to the college portal.
+- There is **no daily quota** and no waiting period between updates — you can log in again as often as you like.
+- There is no 2-hour cache delay: every login performs a fresh scrape.
+- Please only log in again when you actually need updated data; each one sends live requests to the college portal.
 
 ## 6. No Guarantee of Accuracy
 

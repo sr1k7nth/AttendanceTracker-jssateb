@@ -13,10 +13,11 @@ export default function Terms() {
 
         <h3>2. Credentials & Security</h3>
         <ul>
-          <li>Your college portal password is sent to the backend for login and attendance refreshes.
+          <li>Your college portal password is sent to the backend when you log in.
             The backend uses it to authenticate with the portal without saving it to a database or file.</li>
-          <li>The app keeps the password only in page memory, not browser storage. Reloading, closing
-            the tab, or logging out clears it. After reloading, refreshing attendance requires another login.</li>
+          <li>The password is used for that one request and then dropped — it is never kept in cookies,
+            localStorage or sessionStorage, and is not held in page memory either. Fetching updated
+            attendance therefore always means logging in again.</li>
           <li>I do not have access to any other college systems, emails, or internal services.</li>
         </ul>
 
@@ -43,10 +44,10 @@ export default function Terms() {
 
         <h3>5. No Usage Limits</h3>
         <ul>
-          <li>There is <strong>no daily refresh quota</strong> and no waiting period between refreshes —
-            you can refresh as often as you like.</li>
-          <li>There is no 2-hour cache delay: every refresh performs a fresh scrape.</li>
-          <li>Please still refresh only when you actually need to; each one sends live requests to the
+          <li>There is <strong>no daily quota</strong> and no waiting period between updates —
+            you can log in again as often as you like.</li>
+          <li>There is no 2-hour cache delay: every login performs a fresh scrape.</li>
+          <li>Please only log in again when you actually need updated data; each one sends live requests to the
             college portal.</li>
         </ul>
 

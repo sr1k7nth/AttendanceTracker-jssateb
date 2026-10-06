@@ -14,10 +14,6 @@ class UserPayload(BaseModel):
     usn: str
 
 
-class UserScrapeRequest(BaseModel):
-    password: SecretStr
-
-
 class UserLogin(BaseModel):
     usn: str
     password: SecretStr

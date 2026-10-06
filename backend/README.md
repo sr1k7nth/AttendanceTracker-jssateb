@@ -23,7 +23,6 @@ The JSSATEB college ERP portal has **no public API**. It's an ASP.NET WebForms a
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
 | POST | `/scraper/login` | No | None | Scrape portal → cache in DB → return JWT |
-| POST | `/scraper/refresh` | JWT | None | Re-scrape portal → update cache |
 | GET | `/fetch_attendance/` | JWT | None | Return cached attendance (incl. timetable) from DB |
 | GET | `/leaderboard` | JWT | None | Ranked list of opted-in users |
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
@@ -44,10 +43,12 @@ before it reaches the review logic.
 **There are none.** No daily quota, no 2-hour TTL, no 429:
 
 ```
-Refresh request → scrape portal → update cache → return
+Login request → scrape portal → update cache → return
 ```
 
-Both `/scraper/login` and `/scraper/refresh` perform a real scrape every time.
+`/scraper/login` performs a real scrape every time. There is no
+`/scraper/refresh`: the portal password is never stored, so refreshing
+attendance means logging in again.
 
 ## How a scrape works
 
@@ -88,7 +89,7 @@ backend/
 │   ├── config.py            # Pydantic Settings (env vars)
 │   ├── oauth.py             # JWT creation + validation
 │   └── routes/
-│       ├── scrape.py        # /scraper/login + /scraper/refresh
+│       ├── scrape.py        # /scraper/login
 │       ├── fetch_attendance.py  # /fetch_attendance
 │       ├── leaderboard.py   # /leaderboard
 │       ├── donations.py     # /supporters + /supporters/progress + /donations

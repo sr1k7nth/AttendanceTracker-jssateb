@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getToken, fetchAttendance, refreshAttendance, logout } from './api';
+import { getToken, fetchAttendance, logout } from './api';
 import Login from './components/Login';
 import Landing from './components/Landing';
 import AttendanceSummary from './components/AttendanceSummary';
@@ -35,7 +35,6 @@ function App() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [sessionPassword, setSessionPassword] = useState('');
   // Returning users (usn in localStorage) skip the landing page
   const [showLogin, setShowLogin] = useState(() => !!localStorage.getItem('usn'));
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,9 +42,7 @@ function App() {
   const menuRef = useRef(null);
   const popupCountedRef = useRef(false);
 
-  // Admin UI appears only inside a panel-credential session (the panel
-  // username/password typed on the login page). No admin link exists for
-  // anyone logging in the normal way — not even the admin's own USN.
+  // Admin UI only for a panel-credential session — never a normal login.
   const isAdmin = !!sessionStorage.getItem('panel_creds');
   const menuItems = isAdmin ? [...MENU_ITEMS, 'admin'] : MENU_ITEMS;
   const menuLabels = isAdmin ? { ...MENU_LABELS, admin: 'Admin' } : MENU_LABELS;
@@ -75,7 +72,7 @@ function App() {
 
   // --- donation popup -------------------------------------------------------
   function donationPopupBlocked() {
-    // Never during a panel session (the admin is here to review proofs)
+    // Never during a panel session
     if (sessionStorage.getItem('panel_creds')) return true;
     // Never for supporters
     try {
@@ -96,9 +93,7 @@ function App() {
     return true;
   }
 
-  // Cadence: popup due on opens 1, 3, 6, 9, 12… (first-ever open included,
-  // then every 3rd). Due-ness is decided purely by the open count; the
-  // once-per-day / supporter / panel gates live inside openDonationPopup().
+  // Popup due on opens 1, 3, 6, 9, 12…; other gates live in openDonationPopup().
   useEffect(() => {
     if (!loggedIn) return;
     if (popupCountedRef.current) return; // StrictMode double-mount guard
@@ -112,7 +107,7 @@ function App() {
   // Fetch attendance on login
   useEffect(() => {
     if (!loggedIn) return;
-    // If we already have cached data, show it immediately and fetch in background
+    // Show cached data first, fetch in background
     if (attendance) {
       fetchAttendance()
         .then((data) => {
@@ -146,30 +141,28 @@ function App() {
     setLoggedIn(false);
     setAttendance(null);
     localStorage.removeItem('attendance');
-    setSessionPassword('');
     sessionStorage.removeItem('sessionPassword');
     setTab('attendance');
     setShowLogin(false);
     setShowSupportPopup(false);
   }
 
+  // Password is never stored, so refreshing means logging in again.
   function handleRefresh() {
-    if (!sessionPassword) {
-      // No password in session — send to login (not landing)
-      handleLogout();
-      setShowLogin(true);
-      return;
-    }
+    handleLogout();
+    setShowLogin(true);
+  }
+
+  // Retrying only needs our own cache — no password, no scrape.
+  function handleRetry() {
     setLoading(true);
     setError('');
-    refreshAttendance(sessionPassword)
-      .then((res) => {
-        setAttendance(res);
-        localStorage.setItem('attendance', JSON.stringify(res));
+    fetchAttendance()
+      .then((data) => {
+        setAttendance(data);
+        localStorage.setItem('attendance', JSON.stringify(data));
       })
-      .catch((err) => {
-        setError(err.message);
-      })
+      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }
 
@@ -284,7 +277,6 @@ function App() {
           showLogin ? (
             <Login
               onLogin={handleLogin}
-              onPassword={setSessionPassword}
               onTerms={() => setTab('terms')}
               onBack={() => setShowLogin(false)}
             />
@@ -299,7 +291,7 @@ function App() {
             <p className="error-hint">The server may be waking up from sleep. Wait a minute and try again.</p>
             <button
               className="btn error-retry"
-              onClick={handleRefresh}
+              onClick={handleRetry}
               disabled={loading}
             >
               {loading ? 'Refreshing...' : 'Try again'}
