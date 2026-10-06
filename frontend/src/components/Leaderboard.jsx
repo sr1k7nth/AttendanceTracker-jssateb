@@ -23,10 +23,19 @@ export default function Leaderboard({ myBranch }) {
           new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(
             new Date(ts)
           );
+        // Users cluster into fixed 3-day windows (days since the epoch split
+        // by 3, so every IST date maps to the same bucket for everyone).
+        const bucketKey = (ts) =>
+          Math.floor(Date.parse(`${dayKey(ts)}T00:00:00Z`) / 86400000 / 3);
         const ordered = [...data].sort((a, b) => {
-          const dayDiff = dayKey(b.timestamp).localeCompare(dayKey(a.timestamp));
-          if (dayDiff !== 0) return dayDiff;
-          return (a.total_avg - b.total_avg) * avgDir;
+          // 1. newest 3-day bucket first
+          const bucketDiff = bucketKey(b.timestamp) - bucketKey(a.timestamp);
+          if (bucketDiff !== 0) return bucketDiff;
+          // 2. attendance inside the bucket (Highest/Lowest select)
+          const avgDiff = (a.total_avg - b.total_avg) * avgDir;
+          if (avgDiff !== 0) return avgDiff;
+          // 3. tiebreak: the more recent refresh wins
+          return dayKey(b.timestamp).localeCompare(dayKey(a.timestamp));
         });
         setUsers(ordered.map((u, i) => ({ ...u, rank: i + 1 })));
       })
