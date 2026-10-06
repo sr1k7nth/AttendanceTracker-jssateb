@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchLeaderboard } from '../api';
+import SupporterBadge from './SupporterBadge';
 
 const PAGE_SIZE = 10;
 
@@ -85,11 +86,7 @@ export default function Leaderboard({ myBranch }) {
                 <span className="leaderboard-usn" title={u.alias || 'Anonymous'}>
                   {u.alias || 'Anonymous'}
                 </span>
-                {u.is_supporter && (
-                  <span className="supporter-badge" title="Supporter">
-                    ★
-                  </span>
-                )}
+                {u.is_supporter && <SupporterBadge />}
               </span>
               <span className={`attendance-pct ${u.total_avg >= 85 ? 'high' : u.total_avg >= 75 ? 'mid' : 'low'}`}>
                 {u.total_avg}%
