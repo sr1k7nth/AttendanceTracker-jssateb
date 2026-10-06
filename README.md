@@ -45,7 +45,7 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 | Layer | Tech | Hosting |
 |-------|------|---------|
 | Backend | FastAPI + httpx + SQLAlchemy | Ubuntu server (systemd) |
-| Database | PostgreSQL 18 | same server (localhost) |
+| Database | PostgreSQL 18 | AWS |
 | Frontend | React + Vite | Vercel |
 | Auth | JWT (PyJWT, 7-day tokens) | — |
 | Migrations | Alembic | — |
