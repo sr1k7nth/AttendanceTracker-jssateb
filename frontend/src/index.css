@@ -1654,9 +1654,8 @@ a:hover {
   color: var(--red);
 }
 
-/* Highlight missed classes so they pop out of the grid */
+/* Absent classes — same background as the grid; red border + text mark them */
 .tt-absent {
-  background: var(--bg-hover);
   border-color: var(--red);
 }
 
