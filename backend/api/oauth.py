@@ -8,7 +8,7 @@ from .config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/scraper/login")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 43200
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080  # 7 days
 
 
 def create_access_token(data: dict):
