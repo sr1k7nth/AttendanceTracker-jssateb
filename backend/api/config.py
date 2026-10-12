@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # 503 "not configured" instead of letting anyone in (safe deploy default).
     ADMIN_PANEL_USERNAME: str = ""
     ADMIN_PANEL_PASSWORD: str = ""
+    # Portal USN the admin gate accepts. Kept out of the source so it isn't
+    # published with the repo; left empty = admin routes answer 503.
+    ADMIN_USN: str = ""
 
     @property
     def database_url(self):

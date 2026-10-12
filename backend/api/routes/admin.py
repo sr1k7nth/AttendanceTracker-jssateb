@@ -15,7 +15,6 @@ from ..models import Donation
 from ..oauth import get_current_user
 from ..schemas import ApproveRequest, DonationPendingOut
 from .donations import UPLOAD_DIR
-from .scrape import ADMIN_USN
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -32,9 +31,13 @@ def require_admin(
     Authorization header is already taken by the Bearer token — one header
     can't hold both schemes.
     """
-    if not settings.ADMIN_PANEL_USERNAME or not settings.ADMIN_PANEL_PASSWORD:
+    if (
+        not settings.ADMIN_PANEL_USERNAME
+        or not settings.ADMIN_PANEL_PASSWORD
+        or not settings.ADMIN_USN
+    ):
         raise HTTPException(503, "Admin panel is not configured.")
-    if usn != ADMIN_USN:
+    if usn != settings.ADMIN_USN:
         raise HTTPException(403, "Not authorized.")
     if not x_admin_auth:
         raise HTTPException(401, "Missing admin panel credentials.")
