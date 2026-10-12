@@ -2391,8 +2391,8 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+  background: var(--yellow);
+  border: 1px solid var(--yellow);
   border-radius: 4px;
   padding: 1rem;
   font: inherit;
@@ -2400,16 +2400,19 @@ a:hover {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: var(--text-bright);
+  /* --bg flips dark↔light with the theme, so it stays legible on yellow
+     in both modes (dark text on light-yellow, light text on dark-yellow). */
+  color: var(--bg);
   cursor: pointer;
 }
 
 .history-toggle:hover {
-  background: var(--bg-hover);
+  filter: brightness(1.06);
 }
 
 .history-chevron {
-  color: var(--text-dim);
+  color: var(--bg);
+  opacity: 0.75;
   transition: transform 0.2s ease;
 }
 
