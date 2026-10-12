@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Timetable from './Timetable';
+import { fetchHistory } from '../api';
 
 function pctColor(pct) {
   const n = parseFloat(pct);
@@ -8,9 +9,91 @@ function pctColor(pct) {
   return 'low';
 }
 
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+/* Hand-rolled SVG line chart — no chart library, so nothing new to install.
+   Y adapts to the data (always including the 75/85 lines when in reach) so a
+   2% drift is visible instead of being flattened against a fixed 0–100 axis. */
+function HistoryChart({ points }) {
+  const W = 600, H = 220, PAD_L = 32, PAD_R = 12, PAD_T = 14, PAD_B = 26;
+  const vals = points.map((p) => p.total_avg);
+  let lo = Math.min(Math.min(...vals), 75) - 3;
+  let hi = Math.max(Math.max(...vals), 85) + 3;
+  lo = Math.max(0, Math.min(lo, 90));
+  hi = Math.min(100, Math.max(hi, 10));
+  if (hi - lo < 10) {
+    lo = Math.max(0, lo - 5);
+    hi = Math.min(100, hi + 5);
+  }
+
+  const t0 = Date.parse(points[0].recorded_at);
+  const t1 = Date.parse(points[points.length - 1].recorded_at);
+  const span = Math.max(t1 - t0, 1);
+  const x = (t) => PAD_L + ((t - t0) / span) * (W - PAD_L - PAD_R);
+  const y = (v) => PAD_T + (1 - (v - lo) / (hi - lo)) * (H - PAD_T - PAD_B);
+
+  const path = points
+    .map((p, i) => `${i ? 'L' : 'M'}${x(Date.parse(p.recorded_at)).toFixed(1)},${y(p.total_avg).toFixed(1)}`)
+    .join(' ');
+  const guides = [75, 85].filter((g) => g > lo && g < hi);
+
+  return (
+    <svg
+      className="history-chart"
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label="Overall attendance percentage over time"
+    >
+      {guides.map((g) => (
+        <g key={g}>
+          <line
+            className={`history-guide ${g === 85 ? 'g85' : 'g75'}`}
+            x1={PAD_L}
+            x2={W - PAD_R}
+            y1={y(g)}
+            y2={y(g)}
+          />
+          <text className="history-axis" x={PAD_L - 6} y={y(g) + 3} textAnchor="end">
+            {g}
+          </text>
+        </g>
+      ))}
+      <line className="history-axis-line" x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={H - PAD_B} />
+      <path className="history-line" d={path} />
+      {points.map((p, i) => (
+        <circle
+          key={i}
+          className={`history-dot ${pctColor(String(p.total_avg))}`}
+          cx={x(Date.parse(p.recorded_at))}
+          cy={y(p.total_avg)}
+          r={3}
+        >
+          <title>{`${fmtDate(p.recorded_at)} — ${p.total_avg}%`}</title>
+        </circle>
+      ))}
+      <text className="history-axis" x={PAD_L} y={H - 8} textAnchor="start">
+        {fmtDate(points[0].recorded_at)}
+      </text>
+      <text className="history-axis" x={W - PAD_R} y={H - 8} textAnchor="end">
+        {fmtDate(points[points.length - 1].recorded_at)}
+      </text>
+    </svg>
+  );
+}
+
 export default function AttendanceSummary({ data, onRefresh, loading, onDonate }) {
   const [target, setTarget] = useState('');
   const [calculated, setCalculated] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyErr, setHistoryErr] = useState('');
 
   if (!data) return null;
 
@@ -30,6 +113,20 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
       setCalculated({ canMiss: Math.floor((totalPresent - ratio * totalClasses) / ratio) });
     } else {
       setCalculated({ needAttend: Math.ceil((ratio * totalClasses - totalPresent) / (1 - ratio)) });
+    }
+  }
+
+  function toggleHistory() {
+    const next = !showHistory;
+    setShowHistory(next);
+    if (next) {
+      // Refetch on every open — an Update (re-login) adds a new point.
+      setHistoryErr('');
+      setHistoryLoading(true);
+      fetchHistory()
+        .then(setHistory)
+        .catch((e) => setHistoryErr(e.message))
+        .finally(() => setHistoryLoading(false));
     }
   }
 
@@ -69,6 +166,41 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
             <span className="stat-sub">at 75%</span>
           </div>
         </div>
+      </div>
+
+      {/* Attendance progression — collapsible graph (one point per login) */}
+      <div className="history-block">
+        <button
+          type="button"
+          className="history-toggle"
+          onClick={toggleHistory}
+          aria-expanded={showHistory}
+        >
+          <span>Attendance over time</span>
+          <span className={`history-chevron${showHistory ? ' open' : ''}`}>▾</span>
+        </button>
+        {showHistory && (
+          <div className="history-panel">
+            {historyLoading && <p className="history-note">Loading…</p>}
+            {historyErr && <p className="history-note history-error">{historyErr}</p>}
+            {!historyLoading && !historyErr && (
+              history.length > 1 ? (
+                <HistoryChart points={history} />
+              ) : (
+                <p className="history-note">
+                  {history.length === 1
+                    ? 'One check-in recorded so far — the graph starts from your next login.'
+                    : 'No history yet. A point is recorded every time you log in.'}
+                </p>
+              )
+            )}
+            {history.length > 1 && (
+              <p className="history-footnote">
+                One point per login, timestamped when the portal was re-scraped. Hover a dot for the exact date.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Custom Target Calculator — stat-card style, matches Can miss / Need to attend */}

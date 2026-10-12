@@ -97,6 +97,13 @@ class LeaderboardResponse(BaseModel):
     is_supporter: bool = False
 
 
+class HistoryPointOut(BaseModel):
+    """One checkpoint on the attendance-progression graph."""
+
+    recorded_at: datetime
+    total_avg: float
+
+
 # --- donations / supporters -------------------------------------------------
 
 

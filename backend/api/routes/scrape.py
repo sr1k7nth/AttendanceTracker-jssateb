@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from ..schemas import UserLogin
 from portal_client import scrapper, LoginError
 from ..models import Attendance as AttendanceModel
+from ..models import AttendanceHistory
 from ..database import get_db
 from ..config import settings
 from datetime import datetime, timezone
@@ -72,6 +73,11 @@ def _scrape_and_cache(
             sem=data["sem"],
         )
         db.add(new_user)
+
+    # A login is the only moment fresh numbers exist, so it's also the only
+    # honest point on the progression graph — record it even when the
+    # percentage didn't move since the last check-in.
+    db.add(AttendanceHistory(usn=usn, total_avg=data["total_avg"]))
 
     db.commit()
     return data

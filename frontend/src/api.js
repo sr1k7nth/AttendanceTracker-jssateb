@@ -53,6 +53,10 @@ export async function fetchAttendance() {
   return request('/fetch_attendance/');
 }
 
+export async function fetchHistory() {
+  return request('/fetch_attendance/history');
+}
+
 export async function fetchLeaderboard(sort = 'desc', branch = 'ALL') {
   return request(`/leaderboard?sort=${sort}&branch=${branch}`);
 }

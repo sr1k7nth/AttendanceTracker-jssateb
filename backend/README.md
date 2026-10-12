@@ -24,6 +24,7 @@ The JSSATEB college ERP portal has **no public API**. It's an ASP.NET WebForms a
 |--------|----------|------|------------|-------------|
 | POST | `/scraper/login` | No | None | Scrape portal → cache in DB → return JWT |
 | GET | `/fetch_attendance/` | JWT | None | Return cached attendance (incl. timetable) from DB |
+| GET | `/fetch_attendance/history` | JWT | None | Percentage checkpoints (one per login) for the progress graph |
 | GET | `/leaderboard` | JWT | None | Ranked list of opted-in users |
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
 | GET | `/supporters/progress` | No | None | Donation progress (month + lifetime totals) |
@@ -146,6 +147,20 @@ so raw portal HTML never lands in the repo).
 Payment screenshots are stored under `backend/uploads/donations/` (override with
 `DONATIONS_UPLOAD_DIR`) — outside any statically served path, so a leak would
 require an authenticated route plus a DB row.
+
+### `attendance_history` table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INT (PK) | Row id |
+| `usn` | VARCHAR (FK → `attendance.usn`) | Student; cascades on account delete |
+| `total_avg` | FLOAT | Overall attendance percentage at that moment |
+| `recorded_at` | TIMESTAMPTZ | When the portal was re-scraped (default `now()`) |
+
+One checkpoint is appended on **every login** (the only moment fresh numbers
+exist), so `GET /fetch_attendance/history` can plot percentage over time. The
+migration that created the table seeded each existing account with one point —
+its last scrape — so early users see something before their next login.
 
 ## Environment Variables
 

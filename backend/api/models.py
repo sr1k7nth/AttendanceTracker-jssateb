@@ -5,6 +5,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     func,
@@ -56,3 +57,24 @@ class Donation(Base):
     )
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
 
+
+class AttendanceHistory(Base):
+    """One checkpoint per login — the attendance-progression graph.
+
+    Only the overall percentage is tracked; the per-subject breakdown lives
+    in `attendance.summary` and is overwritten on every scrape.
+    """
+
+    __tablename__ = "attendance_history"
+    __table_args__ = (
+        Index("ix_attendance_history_usn_recorded_at", "usn", "recorded_at"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    usn = Column(
+        String, ForeignKey("attendance.usn", ondelete="CASCADE"), nullable=False
+    )
+    total_avg = Column(Float, nullable=False)
+    recorded_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

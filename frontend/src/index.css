@@ -2377,3 +2377,107 @@ a:hover {
     flex-direction: column;
   }
 }
+
+/* ========================================
+   Attendance Over Time — collapsible graph
+   ======================================== */
+
+.history-block {
+  margin-bottom: 2rem;
+}
+
+.history-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1rem;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-bright);
+  cursor: pointer;
+}
+
+.history-toggle:hover {
+  background: var(--bg-hover);
+}
+
+.history-chevron {
+  color: var(--text-dim);
+  transition: transform 0.2s ease;
+}
+
+.history-chevron.open {
+  transform: rotate(180deg);
+}
+
+.history-panel {
+  margin-top: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.history-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.history-line {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.history-dot {
+  fill: var(--bg-surface);
+  stroke-width: 2;
+}
+
+.history-dot.high { stroke: var(--green); }
+.history-dot.mid  { stroke: var(--yellow); }
+.history-dot.low  { stroke: var(--red); }
+
+.history-axis {
+  fill: var(--text-dim);
+  font-size: 10px;
+}
+
+.history-axis-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.history-guide {
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.history-guide.g85 { stroke: var(--green); opacity: 0.5; }
+.history-guide.g75 { stroke: var(--yellow); opacity: 0.5; }
+
+.history-note {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.history-error {
+  color: var(--red);
+}
+
+.history-footnote {
+  margin-top: 0.6rem;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--text-dim);
+}
