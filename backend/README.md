@@ -120,10 +120,6 @@ so raw portal HTML never lands in the repo).
 | `absent_periods` | JSONB | Absent period details |
 | `timetable` | JSONB | Weekly period grid (day × period, present/absent/upcoming) |
 | `total_avg` | FLOAT | Overall attendance percentage |
-| `can_miss85` | INT | Classes can miss to stay at 85% |
-| `can_miss75` | INT | Classes can miss to stay at 75% |
-| `need_to_attend85` | INT | Classes must attend for 85% |
-| `need_to_attend75` | INT | Classes must attend for 75% |
 | `timestamp` | TIMESTAMP | Last scrape time (UTC) |
 | `leaderboard_opt` | BOOL | Opted in to leaderboard |
 | `sem` | INT | Current semester |

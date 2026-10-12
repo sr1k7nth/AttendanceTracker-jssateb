@@ -5,9 +5,12 @@ from pydantic import (
     Field,
     SecretStr,
     StringConstraints,
+    computed_field,
     model_validator,
 )
 from datetime import datetime
+
+from .metrics import compute_metrics
 
 
 class UserPayload(BaseModel):
@@ -45,16 +48,6 @@ class SummarySchema(BaseModel):
     percentage: str
 
 
-class UserResponse(BaseModel):
-    summary: list[SummarySchema]
-    absent_periods: list[AbsentSchema]
-    total_avg: float
-    can_miss85: int
-    can_miss75: int
-    need_to_attend85: int
-    need_to_attend75: int
-
-
 class AttendanceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -63,16 +56,35 @@ class AttendanceResponse(BaseModel):
     summary: list
     absent_periods: list
     total_avg: float
-    can_miss85: int
-    can_miss75: int
-    need_to_attend85: int
-    need_to_attend75: int
     timestamp: datetime
     leaderboard_opt: bool
     sem: int | None = None
     branch: str | None = None
     timetable: dict | None = None
     is_supporter: bool = False
+
+    # Derived from `summary` at response time rather than stored in the DB —
+    # `total_avg` above is the only metric that needs a column (leaderboard
+    # ORDER BY). `summary or []` keeps legacy NULL rows returning zeros.
+    @computed_field
+    @property
+    def can_miss85(self) -> int:
+        return compute_metrics(self.summary or [])["can_miss85"]
+
+    @computed_field
+    @property
+    def can_miss75(self) -> int:
+        return compute_metrics(self.summary or [])["can_miss75"]
+
+    @computed_field
+    @property
+    def need_to_attend85(self) -> int:
+        return compute_metrics(self.summary or [])["need_to_attend85"]
+
+    @computed_field
+    @property
+    def need_to_attend75(self) -> int:
+        return compute_metrics(self.summary or [])["need_to_attend75"]
 
 
 class LeaderboardResponse(BaseModel):

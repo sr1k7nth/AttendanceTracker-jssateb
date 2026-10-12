@@ -13,8 +13,6 @@ import time
 
 router = APIRouter(prefix="/scraper", tags=["Scraper"])
 
-ADMIN_USN = "JS240955"
-
 logger = logging.getLogger("scraper.queue")
 
 # Each login re-scrapes live; no rate limit. No /scraper/refresh — the portal password is never stored.
@@ -54,10 +52,6 @@ def _scrape_and_cache(
         existing.absent_periods = data["absent_periods"]  # type: ignore
         existing.timetable = data["timetable"]  # type: ignore
         existing.total_avg = data["total_avg"]  # type: ignore
-        existing.can_miss75 = data["can_miss75"]  # type: ignore
-        existing.can_miss85 = data["can_miss85"]  # type: ignore
-        existing.need_to_attend75 = data["need_to_attend75"]  # type: ignore
-        existing.need_to_attend85 = data["need_to_attend85"]  # type: ignore
         existing.timestamp = datetime.now(timezone.utc)  # type: ignore
         existing.branch = data["branch"]  # type: ignore
         existing.sem = data["sem"]  # type: ignore
@@ -72,10 +66,6 @@ def _scrape_and_cache(
             absent_periods=data["absent_periods"],
             timetable=data["timetable"],
             total_avg=data["total_avg"],  # type: ignore
-            can_miss75=data["can_miss75"],  # type: ignore
-            can_miss85=data["can_miss85"],  # type: ignore
-            need_to_attend75=data["need_to_attend75"],  # type: ignore
-            need_to_attend85=data["need_to_attend85"],  # type: ignore
             timestamp=datetime.now(timezone.utc),
             leaderboard_opt=leaderboard_opt,
             branch=data["branch"],
@@ -95,15 +85,16 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     if (
         panel_user
         and panel_pass
+        and settings.ADMIN_USN
         and secrets.compare_digest(user.usn.lower(), panel_user.lower())
         and secrets.compare_digest(user.password.get_secret_value(), panel_pass)
     ):
         return {
             "token": create_access_token(
-                {"usn": ADMIN_USN, "leaderboard_opt": False}
+                {"usn": settings.ADMIN_USN, "leaderboard_opt": False}
             ),
             "admin": True,
-            "usn": ADMIN_USN,
+            "usn": settings.ADMIN_USN,
         }
     data = _scrape_and_cache(
         user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias

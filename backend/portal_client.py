@@ -28,7 +28,6 @@ routes and the DB write path are unchanged.
 """
 
 import base64
-import math
 import re
 from pathlib import Path
 
@@ -36,6 +35,11 @@ import httpx
 from bs4 import BeautifulSoup
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+
+# Shared with the API: the can-miss / need-to-attend arithmetic lives in
+# api.metrics so routes can derive those numbers without importing this
+# scraper (httpx + bs4).
+from api.metrics import compute_metrics
 
 PORTAL_URL = "https://jssateb.azurewebsites.net/RApps/Home/login.aspx?E=1"
 BASE = "https://jssateb.azurewebsites.net"
@@ -118,17 +122,21 @@ def derive_absent_periods(timetable):
 
     (one parser, one source of truth)
     """
-    return [
-        {
-            "day": day["day"],
-            "date": day["date"],
-            "course": p["course"],
-            "attendance": "Absent",
-        }
-        for day in timetable["days"]
-        for p in day["periods"]
-        if p and "absent" in p["status"].lower()
-    ]
+    result = []
+
+    for day in timetable["days"]:
+        for p in day["periods"]:
+            if p and "absent" in p["status"].lower():
+                result.append(
+                    {
+                        "day": day["day"],
+                        "date": day["date"],
+                        "course": p["course"],
+                        "attendance": "Absent",
+                    }
+                )
+
+    return result
 
 
 def parse_summary(soup):
@@ -167,41 +175,6 @@ def parse_summary(soup):
                 }
             )
     return summary, branch, semester
-
-
-def compute_metrics(summary):
-    """Totals + the 75%/85% can-miss / need-to-attend arithmetic."""
-    total_classes = sum(int(x["classes"]) for x in summary)
-    total_present = sum(int(x["present"]) for x in summary)
-    total_avg = (
-        round((total_present / total_classes) * 100, 2) if total_classes else 0
-    )
-
-    if total_avg >= 85:
-        can_miss85 = math.floor((total_present - 0.85 * total_classes) / 0.85)
-        need_to_attend85 = 0
-    else:
-        need_to_attend85 = math.ceil(
-            ((0.85 * total_classes) - total_present) / 0.15
-        )
-        can_miss85 = 0
-
-    if total_avg >= 75:
-        can_miss75 = math.floor((total_present - 0.75 * total_classes) / 0.75)
-        need_to_attend75 = 0
-    else:
-        need_to_attend75 = math.ceil(
-            ((0.75 * total_classes) - total_present) / 0.25
-        )
-        can_miss75 = 0
-
-    return {
-        "total_avg": total_avg,
-        "can_miss85": can_miss85,
-        "can_miss75": can_miss75,
-        "need_to_attend85": need_to_attend85,
-        "need_to_attend75": need_to_attend75,
-    }
 
 
 # ---------------------------------------------------------------------------

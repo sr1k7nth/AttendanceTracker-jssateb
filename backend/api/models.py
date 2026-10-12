@@ -22,10 +22,6 @@ class Attendance(Base):
     absent_periods = Column(JSONB)
     timetable = Column(JSONB)
     total_avg = Column(Float)
-    can_miss85 = Column(Integer)
-    can_miss75 = Column(Integer)
-    need_to_attend85 = Column(Integer)
-    need_to_attend75 = Column(Integer)
     timestamp = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -59,3 +55,4 @@ class Donation(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
+
