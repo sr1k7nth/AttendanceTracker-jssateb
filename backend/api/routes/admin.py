@@ -46,7 +46,14 @@ def require_admin(
         username, _, password = decoded.partition(":")
     except (binascii.Error, UnicodeDecodeError):
         raise HTTPException(401, "Invalid admin credentials.") from None
-    ok_user = secrets.compare_digest(username, settings.ADMIN_PANEL_USERNAME)
+    # Username compares case-insensitively, matching the login gate in
+    # routes/scrape.py: the login form normalises its input (uppercases on
+    # keystroke, stores panel_creds lowercased), so a session carried over
+    # from the login page must unlock the panel whatever the case. The
+    # password stays exact.
+    ok_user = secrets.compare_digest(
+        username.lower(), settings.ADMIN_PANEL_USERNAME.lower()
+    )
     ok_pass = secrets.compare_digest(password, settings.ADMIN_PANEL_PASSWORD)
     if not (ok_user and ok_pass):
         raise HTTPException(401, "Invalid admin credentials.")
