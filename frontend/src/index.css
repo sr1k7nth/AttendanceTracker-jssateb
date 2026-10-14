@@ -2108,9 +2108,11 @@ a:hover {
   font-size: 0.92rem;
   font-weight: 600;
   color: var(--text-bright);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Show the full name: wrap at spaces first, then break anywhere rather
+     than truncating — no ellipsis, no lost characters. min-width lets the
+     flex item shrink so wrapping actually happens inside the card. */
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .supporter-msg {
