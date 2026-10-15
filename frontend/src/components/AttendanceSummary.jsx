@@ -17,6 +17,17 @@ function fmtDate(iso) {
   });
 }
 
+/* How many classes you can still miss (or must still attend) to hold `t`%,
+   given the classes held so far. Shared by the global calculator and the
+   per-subject one, so both always agree. */
+function computeTarget(classes, present, t) {
+  if (isNaN(t) || t < 0 || t > 100 || classes === 0) return null;
+  const ratio = t / 100;
+  if (ratio === 0) return { canMiss: classes - present };
+  if (present / classes >= ratio) return { canMiss: Math.floor((present - ratio * classes) / ratio) };
+  return { needAttend: Math.ceil((ratio * classes - present) / (1 - ratio)) };
+}
+
 /* Hand-rolled SVG line chart — no chart library, so nothing new to install.
    Y adapts to the data (always including the 75/85 lines when in reach) so a
    2% drift is visible instead of being flattened against a fixed 0–100 axis. */
@@ -90,6 +101,9 @@ function HistoryChart({ points }) {
 export default function AttendanceSummary({ data, onRefresh, loading, onDonate }) {
   const [target, setTarget] = useState('');
   const [calculated, setCalculated] = useState(null);
+  const [openSubj, setOpenSubj] = useState(null); // subject code with its calculator open
+  const [subjTarget, setSubjTarget] = useState(''); // carried across subjects
+  const [subjResult, setSubjResult] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -101,19 +115,24 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
   const totalPresent = data.summary?.reduce((s, x) => s + parseInt(x.present || '0'), 0) || 0;
 
   function handleCalculate() {
-    const t = parseFloat(target);
-    if (isNaN(t) || t < 0 || t > 100 || totalClasses === 0) {
-      setCalculated(null);
-      return;
-    }
-    const ratio = t / 100;
-    if (ratio === 0) {
-      setCalculated({ canMiss: totalClasses - totalPresent });
-    } else if (totalPresent / totalClasses >= ratio) {
-      setCalculated({ canMiss: Math.floor((totalPresent - ratio * totalClasses) / ratio) });
-    } else {
-      setCalculated({ needAttend: Math.ceil((ratio * totalClasses - totalPresent) / (1 - ratio)) });
-    }
+    setCalculated(computeTarget(totalClasses, totalPresent, parseFloat(target)));
+  }
+
+  // One subject calculator at a time. Switching subjects clears its result but
+  // keeps the last target entered — the same goal is usually checked everywhere.
+  function toggleSubject(code) {
+    setOpenSubj(openSubj === code ? null : code);
+    setSubjResult(null);
+  }
+
+  function handleSubjCalculate(s) {
+    setSubjResult(
+      computeTarget(
+        parseInt(s.classes || '0'),
+        parseInt(s.present || '0'),
+        parseFloat(subjTarget)
+      )
+    );
   }
 
   function toggleHistory() {
@@ -256,18 +275,77 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
           </div>
 
           <ul className="attendance-list">
-            {data.summary.map((s, i) => (
-              <li key={s.code} className="attendance-row">
-                <span className="subj-col-no">{s.no || i + 1}</span>
-                <span className="subj-col-code mono">{s.code}</span>
-                <span className="subj-col-name" title={s.name}>{s.name}</span>
-                <span className="subj-col-nums">
-                  <span className="subj-num-item">{s.classes}</span>
-                  <span className="subj-num-item">{s.present}</span>
-                </span>
-                <span className={`subj-col-pct ${pctColor(s.percentage)}`}>{s.percentage}</span>
-              </li>
-            ))}
+            {data.summary.map((s, i) => {
+              const open = openSubj === s.code;
+              const held = parseInt(s.classes || '0');
+              return (
+                <li key={s.code} className="attendance-row">
+                  <span className="subj-col-no">{s.no || i + 1}</span>
+                  <span className="subj-col-code mono">{s.code}</span>
+                  <span className="subj-col-name" title={s.name}>{s.name}</span>
+                  <span className="subj-col-nums">
+                    <span className="subj-num-item">{s.classes}</span>
+                    <span className="subj-num-item">{s.present}</span>
+                  </span>
+                  <span className={`subj-col-pct ${pctColor(s.percentage)}`}>{s.percentage}</span>
+                  <button
+                    type="button"
+                    className={`subj-toggle${open ? ' open' : ''}`}
+                    aria-expanded={open}
+                    aria-label={`Custom target calculator for ${s.name}`}
+                    title="Custom target calculator"
+                    onClick={() => toggleSubject(s.code)}
+                  >
+                    ▾
+                  </button>
+
+                  {open && (
+                    <div className="subj-expand">
+                      {held === 0 ? (
+                        <p className="subj-expand-note">No classes held yet for this subject.</p>
+                      ) : (
+                        <>
+                          <div className="subj-expand-controls">
+                            <input
+                              type="number"
+                              className="calc-input"
+                              placeholder="e.g. 80"
+                              min="1"
+                              max="100"
+                              value={subjTarget}
+                              onChange={(e) => {
+                                setSubjTarget(e.target.value);
+                                setSubjResult(null);
+                              }}
+                              onKeyDown={(e) => e.key === 'Enter' && handleSubjCalculate(s)}
+                              aria-label={`Target percentage for ${s.name}`}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-primary calc-btn"
+                              onClick={() => handleSubjCalculate(s)}
+                            >
+                              Calculate
+                            </button>
+                          </div>
+                          <p className="subj-expand-note">
+                            Currently {s.present} of {s.classes} classes held ({s.percentage}%).
+                          </p>
+                          {subjResult && (
+                            <p className="calc-result">
+                              {subjResult.canMiss !== undefined
+                                ? <>You can miss <strong>{subjResult.canMiss}</strong> more {subjResult.canMiss === 1 ? 'class' : 'classes'}.</>
+                                : <>You need to attend <strong>{subjResult.needAttend}</strong> more {subjResult.needAttend === 1 ? 'class' : 'classes'}.</>
+                              }
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
