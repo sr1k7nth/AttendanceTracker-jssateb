@@ -335,9 +335,6 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
                               Calculate
                             </button>
                           </div>
-                          <p className="subj-expand-note">
-                            Currently {s.present} of {s.classes} classes held ({s.percentage}%).
-                          </p>
                           {subjResult && (
                             <p className="calc-result">
                               {subjResult.canMiss !== undefined
