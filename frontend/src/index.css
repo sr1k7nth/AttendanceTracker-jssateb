@@ -1159,7 +1159,7 @@ a:hover {
   text-align: right;
 }
 
-/* Row */
+/* Row — the whole row toggles its custom-target calculator */
 .attendance-row {
   display: flex;
   flex-wrap: wrap;
@@ -1167,6 +1167,12 @@ a:hover {
   padding: 0.55rem 0;
   border-bottom: 1px dotted var(--border);
   gap: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.attendance-row:hover {
+  background: var(--bg-surface);
 }
 
 .attendance-row:last-child {

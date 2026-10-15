@@ -279,7 +279,11 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
               const open = openSubj === s.code;
               const held = parseInt(s.classes || '0');
               return (
-                <li key={s.code} className="attendance-row">
+                <li
+                  key={s.code}
+                  className="attendance-row"
+                  onClick={() => toggleSubject(s.code)}
+                >
                   <span className="subj-col-no">{s.no || i + 1}</span>
                   <span className="subj-col-code mono">{s.code}</span>
                   <span className="subj-col-name" title={s.name}>{s.name}</span>
@@ -288,19 +292,22 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
                     <span className="subj-num-item">{s.present}</span>
                   </span>
                   <span className={`subj-col-pct ${pctColor(s.percentage)}`}>{s.percentage}</span>
+                  {/* No onClick here on purpose: the click bubbles to the row.
+                      Keyboard users still get a real button to focus. */}
                   <button
                     type="button"
                     className={`subj-toggle${open ? ' open' : ''}`}
                     aria-expanded={open}
                     aria-label={`Custom target calculator for ${s.name}`}
                     title="Custom target calculator"
-                    onClick={() => toggleSubject(s.code)}
                   >
                     ▾
                   </button>
 
                   {open && (
-                    <div className="subj-expand">
+                    // Clicks inside the panel (the input, Calculate) must not
+                    // bubble up to the row and close it again.
+                    <div className="subj-expand" onClick={(e) => e.stopPropagation()}>
                       {held === 0 ? (
                         <p className="subj-expand-note">No classes held yet for this subject.</p>
                       ) : (
