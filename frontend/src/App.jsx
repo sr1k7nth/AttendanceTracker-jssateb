@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { getToken, fetchAttendance, logout } from './api';
 import Login from './components/Login';
 import Landing from './components/Landing';
 import AttendanceSummary from './components/AttendanceSummary';
 import Leaderboard from './components/Leaderboard';
 import Faq from './components/Faq';
-import BetaBanner from './components/BetaBanner';
 import Terms from './components/Terms';
 import Changelog from './components/Changelog';
 import Support from './components/Support';
@@ -22,6 +21,17 @@ const MENU_LABELS = {
   terms: 'Terms',
   changelog: 'Changelog',
 };
+// Footer mirrors every nav destination (the admin tab stays out — it only
+// exists for a panel-credential session).
+const FOOTER_NAV = [
+  ['attendance', 'Summary'],
+  ['leaderboard', 'Leaderboard'],
+  ['supporters', 'Supporters'],
+  ['support', 'Donate'],
+  ['faq', 'FAQ'],
+  ['terms', 'Terms'],
+  ['changelog', 'Changelog'],
+];
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!getToken());
@@ -170,9 +180,15 @@ function App() {
     setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
   }
 
+  // Footer links sit at the bottom of the page, so always come back to the top
+  function goToTab(t) {
+    setTab(t);
+    setMenuOpen(false);
+    window.scrollTo(0, 0);
+  }
+
   return (
     <div className="app">
-      <BetaBanner />
       <header className="header">
         <div className="header-top">
           <div className="header-brand">
@@ -325,13 +341,18 @@ function App() {
 
       <footer className="app-footer">
         <div className="footer-links">
-          <button className="faq-link" onClick={() => { setTab('faq'); if (!loggedIn) window.scrollTo(0, 0); }}>
-            FAQ
-          </button>
+          {FOOTER_NAV.map(([t, label], i) => (
+            <Fragment key={t}>
+              {i > 0 && <span className="footer-sep">·</span>}
+              <button className="faq-link" onClick={() => goToTab(t)}>
+                {label}
+              </button>
+            </Fragment>
+          ))}
           <span className="footer-sep">·</span>
-          <button className="faq-link" onClick={() => { setTab('changelog'); if (!loggedIn) window.scrollTo(0, 0); }}>
-            Changelog
-          </button>
+          <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+            Feedback
+          </a>
           <span className="footer-sep">·</span>
           <a
             href="https://github.com/sr1k7nth/AttendanceTracker-jssateb"

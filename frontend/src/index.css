@@ -167,68 +167,6 @@
 }
 
 /* ========================================
-   Beta Banner
-   ======================================== */
-
-.beta-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.85rem;
-  margin-bottom: 1.25rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 0.85rem;
-  color: var(--text-dim);
-  line-height: 1.4;
-}
-
-.beta-badge {
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--bg);
-  background: var(--yellow);
-  padding: 0.15rem 0.45rem;
-  border-radius: 3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.beta-text {
-  flex: 1;
-}
-
-.beta-text a {
-  color: var(--text-bright);
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 2px;
-}
-
-.beta-text a:hover {
-  color: var(--green);
-}
-
-.beta-dismiss {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0 0.2rem;
-  line-height: 1;
-  transition: color 0.2s;
-  flex-shrink: 0;
-}
-
-.beta-dismiss:hover {
-  color: var(--text-bright);
-}
-
-/* ========================================
    Login Loading Spinner
    ======================================== */
 
@@ -860,6 +798,7 @@ a:hover {
 .footer-links {
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
