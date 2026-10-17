@@ -98,19 +98,17 @@ def pending_donations(
 
 @router.get("/latest", response_model=list[LatestLoginOut])
 def latest_logins(
-    limit: int = 25,
     db: Session = Depends(get_db),
     _admin: str = Depends(require_admin),
 ):
-    """The attendance table's latest rows — who re-scraped the portal lately.
+    """The whole attendance table — who re-scraped the portal, latest first.
 
-    Ordered by `timestamp` desc, clamped to 1..100. Times go out as UTC; the
-    frontend renders them in IST.
+    No row limit: the table is one row per user, so its size is bounded by
+    the user base. Times are tz-aware ISO; the frontend renders them in IST.
     """
     rows = (
         db.query(AttendanceModel)
         .order_by(AttendanceModel.timestamp.desc())
-        .limit(max(1, min(limit, 100)))
         .all()
     )
     return [

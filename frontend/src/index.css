@@ -2320,13 +2320,19 @@ a:hover {
   border-bottom: none;
 }
 
-/* Mobile stacking: USN + time / alias / branch-sem + average */
+/* Mobile stacking: USN + time / alias / branch-sem + average.
+   min-width: 0 + ellipsis keeps a long USN inside its cell instead of
+   running over the time (and, on desktop, the alias column). */
 .latest-usn {
   grid-column: 1;
   grid-row: 1;
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--text);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .latest-time {
@@ -2400,7 +2406,9 @@ a:hover {
 
   .latest-header,
   .latest-row {
-    grid-template-columns: 6.5rem minmax(5rem, 1fr) 6.5rem 4.5rem 9rem;
+    /* USN track grows to the longest USN (clamped by free space, ellipsis
+       past that) instead of a fixed width it can spill out of */
+    grid-template-columns: minmax(0, max-content) minmax(5rem, 1fr) 6.5rem 4.5rem 9rem;
     gap: 0.5rem;
     align-items: baseline;
   }

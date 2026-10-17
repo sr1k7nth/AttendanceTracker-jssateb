@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { adminListLatest } from '../api';
 import SupporterBadge from './SupporterBadge';
 
-const LIMIT = 25;
-
 // The admin's view over the attendance table: who re-scraped the portal
 // lately, newest first. Reachable only from the admin-gated menu (App shows
 // it when sessionStorage.panel_creds exists); the API itself still demands
@@ -28,7 +26,7 @@ function fmtIST(iso) {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
+    hour12: true,
   });
 }
 
@@ -47,7 +45,7 @@ export default function Latest() {
   // triggers a synchronous render cascade.
   const load = useCallback(() => {
     if (!creds) return Promise.resolve();
-    return adminListLatest(creds.user, creds.pass, LIMIT)
+    return adminListLatest(creds.user, creds.pass)
       .then((data) => {
         setRows(data);
         setLoading(false);
@@ -91,7 +89,7 @@ export default function Latest() {
         </button>
       </div>
       <p className="latest-note">
-        The {LIMIT} most recent portal re-scrapes, newest first — times in IST.
+        Every sign-in, newest first — times in IST.
       </p>
       {error && <p className="form-error">{error}</p>}
       {loading && !rows.length ? (
