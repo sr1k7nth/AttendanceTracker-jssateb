@@ -30,6 +30,7 @@ The JSSATEB college ERP portal has **no public API**. It's an ASP.NET WebForms a
 | GET | `/supporters/progress` | No | None | Donation progress (month + lifetime totals) |
 | POST | `/donations` | JWT | 5 MB max | Submit name, amount, message, screenshot → pending review |
 | GET | `/admin/donations/pending` | JWT + panel cred | None | Donation proofs awaiting review |
+| GET | `/admin/latest` | JWT + panel cred | None | Latest attendance rows (recent sign-ins, times UTC) |
 | GET | `/admin/donations/{id}/screenshot` | JWT + panel cred | — | Original payment screenshot |
 | POST | `/admin/donations/{id}/approve` | JWT + panel cred | None | Approve → supporter perks apply |
 | POST | `/admin/donations/{id}/reject` | JWT + panel cred | None | Reject the proof |

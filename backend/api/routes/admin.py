@@ -13,7 +13,7 @@ from ..database import get_db
 from ..models import Attendance as AttendanceModel
 from ..models import Donation
 from ..oauth import get_current_user
-from ..schemas import ApproveRequest, DonationPendingOut
+from ..schemas import ApproveRequest, DonationPendingOut, LatestLoginOut
 from .donations import UPLOAD_DIR
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -91,6 +91,37 @@ def pending_donations(
             anonymous=row.anonymous,  # type: ignore
             created_at=row.created_at,  # type: ignore
             screenshot_url=f"/admin/donations/{row.id}/screenshot",  # type: ignore
+        )
+        for row in rows
+    ]
+
+
+@router.get("/latest", response_model=list[LatestLoginOut])
+def latest_logins(
+    limit: int = 25,
+    db: Session = Depends(get_db),
+    _admin: str = Depends(require_admin),
+):
+    """The attendance table's latest rows — who re-scraped the portal lately.
+
+    Ordered by `timestamp` desc, clamped to 1..100. Times go out as UTC; the
+    frontend renders them in IST.
+    """
+    rows = (
+        db.query(AttendanceModel)
+        .order_by(AttendanceModel.timestamp.desc())
+        .limit(max(1, min(limit, 100)))
+        .all()
+    )
+    return [
+        LatestLoginOut(
+            usn=row.usn,  # type: ignore
+            alias=row.alias,
+            total_avg=row.total_avg,
+            branch=row.branch,
+            sem=row.sem,
+            is_supporter=bool(row.is_supporter),  # type: ignore[arg-type]
+            timestamp=row.timestamp,  # type: ignore[arg-type]
         )
         for row in rows
     ]

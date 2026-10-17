@@ -140,3 +140,18 @@ class DonationPendingOut(BaseModel):
 class ApproveRequest(BaseModel):
     # None = keep the donor-entered amount; set it to fix a typo before approving
     amount: int | None = Field(default=None, ge=1, le=10000)
+
+
+class LatestLoginOut(BaseModel):
+    """Admin's view over the attendance table: the latest re-scrapes.
+
+    `timestamp` is UTC; the frontend renders it in IST.
+    """
+
+    usn: str
+    alias: str | None = None
+    total_avg: float | None = None
+    branch: str | None = None
+    sem: int | None = None
+    is_supporter: bool = False
+    timestamp: datetime

@@ -106,6 +106,10 @@ export async function adminListPending(user, pass) {
   return request('/admin/donations/pending', { headers: panelHeaders(user, pass) });
 }
 
+export async function adminListLatest(user, pass, limit = 25) {
+  return request(`/admin/latest?limit=${limit}`, { headers: panelHeaders(user, pass) });
+}
+
 export async function adminApprove(id, amount, user, pass) {
   return request(`/admin/donations/${id}/approve`, {
     method: 'POST',

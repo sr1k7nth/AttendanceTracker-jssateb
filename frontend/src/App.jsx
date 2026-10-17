@@ -11,6 +11,7 @@ import Support from './components/Support';
 import Supporters from './components/Supporters';
 import DonationPopup from './components/DonationPopup';
 import AdminPanel from './components/AdminPanel';
+import Latest from './components/Latest';
 import './index.css';
 
 const FEEDBACK_URL = 'https://forms.gle/RW7jREYrceoacjxY9';
@@ -54,8 +55,10 @@ function App() {
 
   // Admin UI only for a panel-credential session — never a normal login.
   const isAdmin = !!sessionStorage.getItem('panel_creds');
-  const menuItems = isAdmin ? [...MENU_ITEMS, 'admin'] : MENU_ITEMS;
-  const menuLabels = isAdmin ? { ...MENU_LABELS, admin: 'Admin' } : MENU_LABELS;
+  const menuItems = isAdmin ? [...MENU_ITEMS, 'admin', 'latest'] : MENU_ITEMS;
+  const menuLabels = isAdmin
+    ? { ...MENU_LABELS, admin: 'Admin', latest: 'Latest' }
+    : MENU_LABELS;
 
   useEffect(() => {
     // Clear legacy password storage
@@ -242,7 +245,7 @@ function App() {
             </nav>
             <div className="nav-menu" ref={menuRef}>
               <button
-                className={`nav-menu-trigger${MENU_ITEMS.includes(tab) || tab === 'admin' ? ' active' : ''}`}
+                className={`nav-menu-trigger${menuItems.includes(tab) ? ' active' : ''}`}
                 onClick={() => setMenuOpen((o) => !o)}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
@@ -289,6 +292,8 @@ function App() {
               window.scrollTo(0, 0);
             }}
           />
+        ) : tab === 'latest' && isAdmin ? (
+          <Latest />
         ) : !loggedIn ? (
           showLogin ? (
             <Login
