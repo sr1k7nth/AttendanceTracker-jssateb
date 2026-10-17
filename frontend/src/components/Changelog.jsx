@@ -1,5 +1,22 @@
 const versions = [
   {
+    version: 'v2.5',
+    date: 'Oct 17, 2026',
+    title: 'Targets & Trends',
+    changes: [
+      'Attendance over time — a new graph below the stats that plots your overall percentage at every login, so a slow dip is visible long before the portal colours it red; hover a dot for the exact date',
+      'Per-subject calculator — click any subject row to open a calculator with your own target %: type any number (not just 75/85) and it tells you how many classes that subject lets you miss, or how many you still need to attend',
+      'The whole subject row is clickable now, not just the little arrow',
+      'Supporters wall shows full names — long ones wrap onto the next line instead of ending in …',
+      'The beta banner is gone for good — its feedback link moved down to the footer',
+      'Footer mirrors the navbar: Summary, Leaderboard, Supporters, Donate, FAQ, Terms and Changelog in one place, plus Feedback and GitHub',
+      'Login sessions shortened from 30 days to 7 — after a week you will be asked to log in again (expected, not a bug)',
+      'Admin panel sign-in no longer cares about letter case — logging in with panel credentials now goes straight to the review queue',
+      'Absent cells in the weekly timetable blend with the background again',
+      'Behind the scenes: the can-miss / need-to-attend numbers are calculated fresh on every load instead of being stored, so they can never go stale',
+    ],
+  },
+  {
     version: 'v2.4',
     date: 'Oct 6, 2026',
     title: 'Refresh Becomes Update',
