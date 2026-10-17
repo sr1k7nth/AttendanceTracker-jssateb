@@ -2296,21 +2296,9 @@ a:hover {
   margin: -0.4rem 0 1rem;
 }
 
-.latest-header,
-.latest-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.5rem;
-}
-
+/* Column labels need column width — hidden until the desktop grid */
 .latest-header {
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
+  display: none;
 }
 
 .latest-list {
@@ -2318,10 +2306,13 @@ a:hover {
 }
 
 .latest-row {
-  padding: 0.55rem 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.5rem;
+  align-items: baseline;
+  padding: 0.6rem 0;
   border-bottom: 1px dotted var(--border);
   font-size: 0.85rem;
-  overflow: hidden;
   min-width: 0;
 }
 
@@ -2329,15 +2320,28 @@ a:hover {
   border-bottom: none;
 }
 
+/* Mobile stacking: USN + time / alias / branch-sem + average */
 .latest-usn {
+  grid-column: 1;
+  grid-row: 1;
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  min-width: 5.5rem;
   color: var(--text);
 }
 
+.latest-time {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
 .latest-alias {
-  flex: 1;
+  grid-column: 1 / -1;
+  grid-row: 2;
   display: flex;
   align-items: baseline;
   gap: 0.35rem;
@@ -2352,14 +2356,16 @@ a:hover {
 }
 
 .latest-branch {
-  min-width: 5.5rem;
+  grid-column: 1;
+  grid-row: 3;
   font-size: 0.8rem;
   color: var(--text-dim);
   white-space: nowrap;
 }
 
 .latest-pct {
-  min-width: 3.5rem;
+  grid-column: 2;
+  grid-row: 3;
   text-align: right;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -2370,14 +2376,47 @@ a:hover {
 .latest-pct.mid  { color: var(--yellow); }
 .latest-pct.low  { color: var(--red); }
 
-/* pushes the timestamp to the right edge; on narrow screens it wraps to
-   its own right-aligned line instead of squeezing the row */
-.latest-time {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  white-space: nowrap;
+/* Desktop: one line per sign-in on a shared 5-column grid, so every header
+   label sits exactly above its cells */
+@media (min-width: 640px) {
+  .latest-header {
+    display: grid;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+  }
+
+  /* labels take the header styling, not the data cells' fonts */
+  .latest-header span {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    min-width: 0;
+  }
+
+  .latest-header,
+  .latest-row {
+    grid-template-columns: 6.5rem minmax(5rem, 1fr) 6.5rem 4.5rem 9rem;
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+
+  .latest-row {
+    padding: 0.55rem 0;
+  }
+
+  .latest-usn,
+  .latest-time,
+  .latest-alias,
+  .latest-branch,
+  .latest-pct {
+    grid-column: auto;
+    grid-row: auto;
+  }
 }
 
 /* --- supporter badge (leaderboard) --- */

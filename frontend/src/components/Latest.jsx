@@ -109,7 +109,7 @@ export default function Latest() {
             </span>
             <span className="latest-branch">Branch</span>
             <span className="latest-pct">Avg</span>
-            <span className="latest-time">Last sign-in (IST)</span>
+            <span className="latest-time">Sign-in (IST)</span>
           </div>
           <ul className="latest-list">
             {rows.map((r) => (
@@ -120,7 +120,7 @@ export default function Latest() {
                   {r.is_supporter && <SupporterBadge />}
                 </span>
                 <span className="latest-branch">
-                  {[r.branch, r.sem ? `Sem ${r.sem}` : null].filter(Boolean).join(' · ') || '—'}
+                  {[r.branch, r.sem].filter(Boolean).join(' - ') || '—'}
                 </span>
                 <span className={`latest-pct ${pctClass(r.total_avg)}`}>
                   {r.total_avg != null ? `${r.total_avg}%` : '—'}
