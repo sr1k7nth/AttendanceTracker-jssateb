@@ -99,35 +99,39 @@ export default function Latest() {
           <p>No sign-ins recorded yet.</p>
         </div>
       ) : (
-        <>
-          <div className="latest-header">
-            <span className="latest-usn">USN</span>
-            <span className="latest-alias">
-              <span className="latest-alias-name">Alias</span>
-            </span>
-            <span className="latest-branch">Branch</span>
-            <span className="latest-pct">Avg</span>
-            <span className="latest-time">Sign-in (IST)</span>
-          </div>
-          <ul className="latest-list">
-            {rows.map((r) => (
-              <li key={r.usn} className="latest-row">
-                <span className="latest-usn">{r.usn}</span>
-                <span className="latest-alias">
-                  <span className="latest-alias-name">{r.alias || '—'}</span>
-                  {r.is_supporter && <SupporterBadge />}
-                </span>
-                <span className="latest-branch">
-                  {[r.branch, r.sem].filter(Boolean).join(' - ') || '—'}
-                </span>
-                <span className={`latest-pct ${pctClass(r.total_avg)}`}>
-                  {r.total_avg != null ? `${r.total_avg}%` : '—'}
-                </span>
-                <span className="latest-time">{fmtIST(r.timestamp)}</span>
-              </li>
-            ))}
-          </ul>
-        </>
+        <div className="latest-scroll">
+          <table className="latest-table">
+            <thead>
+              <tr>
+                <th className="latest-no">#</th>
+                <th className="latest-usn">USN</th>
+                <th className="latest-alias">Alias</th>
+                <th className="latest-branch">Branch</th>
+                <th className="latest-pct">Avg</th>
+                <th className="latest-time">Sign-in (IST)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.usn}>
+                  <td className="latest-no">{i + 1}</td>
+                  <td className="latest-usn">{r.usn}</td>
+                  <td className="latest-alias">
+                    {r.alias || '—'}
+                    {r.is_supporter && <SupporterBadge />}
+                  </td>
+                  <td className="latest-branch">
+                    {[r.branch, r.sem].filter(Boolean).join(' - ') || '—'}
+                  </td>
+                  <td className={`latest-pct ${pctClass(r.total_avg)}`}>
+                    {r.total_avg != null ? `${r.total_avg}%` : '—'}
+                  </td>
+                  <td className="latest-time">{fmtIST(r.timestamp)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

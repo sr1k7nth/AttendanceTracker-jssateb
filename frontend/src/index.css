@@ -2296,135 +2296,86 @@ a:hover {
   margin: -0.4rem 0 1rem;
 }
 
-/* Column labels need column width — hidden until the desktop grid */
-.latest-header {
-  display: none;
+/* A real table: the browser sizes each column once for the header and every
+   row, so cells can never drift or overlap (a long USN just widens its own
+   column). Narrow screens scroll it sideways instead of stacking a sign-in
+   onto several lines. */
+.latest-scroll {
+  overflow-x: auto;
 }
 
-.latest-list {
-  list-style: none;
-}
-
-.latest-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.2rem 0.5rem;
-  align-items: baseline;
-  padding: 0.6rem 0;
-  border-bottom: 1px dotted var(--border);
+.latest-table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
   font-size: 0.85rem;
-  min-width: 0;
 }
 
-.latest-row:last-child {
+.latest-table th {
+  text-align: left;
+  padding: 0 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.latest-table td {
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px dotted var(--border);
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.latest-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* Mobile stacking: USN + time / alias / branch-sem + average.
-   min-width: 0 + ellipsis keeps a long USN inside its cell instead of
-   running over the time (and, on desktop, the alias column). */
-.latest-usn {
-  grid-column: 1;
-  grid-row: 1;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--text);
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* right-aligned in header and cells alike (same specificity as the th rule,
+   later in the file, so it wins) */
+.latest-table .latest-no,
+.latest-table .latest-pct,
+.latest-table .latest-time {
+  text-align: right;
 }
 
-.latest-time {
-  grid-column: 2;
-  grid-row: 1;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+.latest-no {
+  width: 2.5rem;
   color: var(--text-dim);
-  white-space: nowrap;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.latest-usn {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
 }
 
 .latest-alias {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  min-width: 0;
   color: var(--text-dim);
-}
-
-.latest-alias-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .latest-branch {
-  grid-column: 1;
-  grid-row: 3;
   font-size: 0.8rem;
   color: var(--text-dim);
-  white-space: nowrap;
 }
 
 .latest-pct {
-  grid-column: 2;
-  grid-row: 3;
-  text-align: right;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .latest-pct.high { color: var(--green); }
 .latest-pct.mid  { color: var(--yellow); }
 .latest-pct.low  { color: var(--red); }
 
-/* Desktop: one line per sign-in on a shared 5-column grid, so every header
-   label sits exactly above its cells */
-@media (min-width: 640px) {
-  .latest-header {
-    display: grid;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-  }
-
-  /* labels take the header styling, not the data cells' fonts */
-  .latest-header span {
-    font-family: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-    color: inherit;
-    min-width: 0;
-  }
-
-  .latest-header,
-  .latest-row {
-    /* USN track grows to the longest USN (clamped by free space, ellipsis
-       past that) instead of a fixed width it can spill out of */
-    grid-template-columns: minmax(0, max-content) minmax(5rem, 1fr) 6.5rem 4.5rem 9rem;
-    gap: 0.5rem;
-    align-items: baseline;
-  }
-
-  .latest-row {
-    padding: 0.55rem 0;
-  }
-
-  .latest-usn,
-  .latest-time,
-  .latest-alias,
-  .latest-branch,
-  .latest-pct {
-    grid-column: auto;
-    grid-row: auto;
-  }
+.latest-time {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
 }
 
 /* --- supporter badge (leaderboard) --- */
