@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Attendance Tracker — Runtime Architecture",
+    "locale": "en",
+    "output": ".archify/architecture-attendance-tracker-20261019-101916/attendance-tracker.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/sr1k7nth/AttendanceTracker-jssateb.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "a21fa550a5f57c30b22ff40fcd368c3f98e14d0f"
+    }
+  },
+  "components": [
+    {
+      "id": "student",
+      "type": "external",
+      "label": "Student",
+      "sublabel": "Browser client",
+      "pos": [40, 304],
+      "size": [110, 64],
+      "sources": [
+        { "path": "README.md", "line": 57, "end_line": 57, "label": "how it works" },
+        { "path": "README.md", "line": 60, "end_line": 62, "label": "visit flow" }
+      ]
+    },
+    {
+      "id": "admin",
+      "type": "external",
+      "label": "Admin reviewer",
+      "sublabel": "Panel credential gate",
+      "pos": [240, 84],
+      "size": [160, 64],
+      "sources": [
+        { "path": "backend/api/routes/admin.py", "line": 24, "end_line": 43, "label": "require_admin" }
+      ]
+    },
+    {
+      "id": "spa",
+      "type": "frontend",
+      "label": "React SPA",
+      "sublabel": "Vite · localStorage cache",
+      "pos": [240, 296],
+      "size": [160, 76],
+      "sources": [
+        { "path": "frontend/src/api.js", "line": 3, "end_line": 23, "label": "fetch + JWT header" },
+        { "path": "frontend/src/App.jsx", "line": 43, "end_line": 50, "label": "cached data" }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI service",
+      "sublabel": "routes · CORS · error masking",
+      "pos": [500, 292],
+      "size": [180, 80],
+      "sources": [
+        { "path": "backend/api/main.py", "line": 21, "end_line": 45, "label": "app + routers" },
+        { "path": "backend/api/routes/scrape.py", "line": 86, "end_line": 111, "label": "login route" }
+      ]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "JWT auth",
+      "sublabel": "HS256 · 7-day tokens",
+      "pos": [500, 84],
+      "size": [180, 64],
+      "sources": [
+        { "path": "backend/api/oauth.py", "line": 11, "end_line": 21, "label": "token creation" },
+        { "path": "backend/api/oauth.py", "line": 24, "end_line": 44, "label": "verification" }
+      ]
+    },
+    {
+      "id": "scraper",
+      "type": "backend",
+      "label": "Portal scraper",
+      "sublabel": "httpx + BeautifulSoup",
+      "pos": [780, 296],
+      "size": [160, 76],
+      "sources": [
+        { "path": "backend/portal_client.py", "line": 210, "end_line": 227, "label": "scrapper()" },
+        { "path": "backend/portal_client.py", "line": 229, "end_line": 331, "label": "four-request replay" }
+      ]
+    },
+    {
+      "id": "portal",
+      "type": "external",
+      "label": "JSSATEB portal",
+      "sublabel": "ASP.NET WebForms (Azure)",
+      "pos": [1070, 296],
+      "size": [150, 76],
+      "sources": [
+        { "path": "backend/portal_client.py", "line": 44, "end_line": 48, "label": "portal URLs" },
+        { "path": "README.md", "line": 146, "end_line": 151, "label": "scraping description" }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL 18",
+      "sublabel": "attendance + history · AWS",
+      "pos": [440, 474],
+      "size": [170, 64],
+      "sources": [
+        { "path": "backend/api/database.py", "line": 7, "end_line": 19, "label": "engine + session" },
+        { "path": "backend/api/models.py", "line": 18, "end_line": 38, "label": "attendance model" }
+      ]
+    },
+    {
+      "id": "uploads",
+      "type": "database",
+      "label": "Proof storage",
+      "sublabel": "payment proofs · server disk",
+      "pos": [720, 474],
+      "size": [170, 64],
+      "sources": [
+        { "path": "backend/api/routes/donations.py", "line": 25, "end_line": 29, "label": "upload dir" },
+        { "path": "backend/api/routes/donations.py", "line": 130, "end_line": 132, "label": "file write" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Vercel · static frontend",
+      "wraps": ["spa"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "Ubuntu server · FastAPI under systemd",
+      "wraps": ["auth", "api", "scraper"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "AWS · PostgreSQL 18 (off-host)",
+      "wraps": ["db"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "Third party · JSSATEB portal (untrusted)",
+      "wraps": ["portal"],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "student-to-spa",
+      "from": "student",
+      "to": "spa",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "admin-to-spa",
+      "from": "admin",
+      "to": "spa",
+      "label": "panel creds",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "spa-to-api",
+      "from": "spa",
+      "to": "api",
+      "label": "login POST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "auth-verify",
+      "from": "auth",
+      "to": "api",
+      "label": "verify Bearer JWT",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "api-to-scraper",
+      "from": "api",
+      "to": "scraper",
+      "label": "run scrape",
+      "variant": "emphasis"
+    },
+    {
+      "id": "scraper-to-portal",
+      "from": "scraper",
+      "to": "portal",
+      "label": "4 HTTP calls",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-to-db",
+      "from": "api",
+      "to": "db",
+      "label": "upsert cache",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "api-to-uploads",
+      "from": "api",
+      "to": "uploads",
+      "label": "save proof ≤5 MB",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Primary path — login → scrape → cache",
+      "items": [
+        "POST /scraper/login runs portal_client.scrapper() in-process: no browser, four plain HTTP requests (~9 MB, ~1–2 s) replaying the portal's own ASP.NET WebForms submits.",
+        "Sequence: GET login form for the RSA public key → CHECKCOLLEGE pre-check (USN plaintext, password RSA-encrypted) → POST RSA-encrypted login → GET timetable + POST attendance summary.",
+        "Parsed JSON is upserted into attendance, one attendance_history checkpoint is appended, and a 7-day JWT is returned in the same response.",
+        "Failures are masked: bad credentials → 401, transport or unexpected HTML → 502 'Portal unavailable'."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Reads & caching (return path, not drawn)",
+      "items": [
+        "GET /fetch_attendance and /fetch_attendance/history verify the Bearer JWT and serve the cached PostgreSQL row — the portal is contacted only during login.",
+        "There is no rate limit, TTL, or quota: every login really re-scrapes (README: 'Rate Limiting — There are none').",
+        "The SPA keeps the token and last payload in localStorage, so returning users render from cache while the network request is in flight."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust & credential handling",
+      "items": [
+        "Portal passwords are never stored: used once inside the scrape, then dropped — no server-side sessions, no browser persistence; refreshing data means logging in again.",
+        "httpx INFO logging is suppressed in main.py so the pre-check URL (USN + RSA'd password) never reaches journalctl.",
+        "JWTs are HS256-signed with JWT_SECRET_KEY (7-day expiry); validation errors return a generic 422 that never echoes request values; CORS is an explicit allowlist.",
+        "Leaderboard exposes alias, percentage, branch and rank only — USNs and raw records never leave the database."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Admin review queue — secondary flow",
+      "items": [
+        "Panel credentials are typed on the normal login form; the SPA keeps them in sessionStorage (per-tab only) and sends them as X-Admin-Auth alongside the JWT.",
+        "require_admin is a double gate: 503 if unconfigured, 403 for a non-admin USN, constant-time compare for panel user and password.",
+        "Donation proofs are capped at 5 MB, content-sniffed as images, and written under uploads/donations with server-generated names — outside the web root and never served statically; the private admin_note is never published."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Ownership & operations",
+      "items": [
+        "Frontend: Vercel builds frontend/ on push to main; VITE_API_URL points the browser at the backend public URL.",
+        "Backend: uvicorn under systemd on an Ubuntu server (Dockerfile also provided); `alembic upgrade head` runs before each restart.",
+        "Database: PostgreSQL 18 on AWS, reached over postgresql:// built in backend/api/config.py — hence the off-host boundary.",
+        "Known fragility: the scraper mirrors the portal's HTML structure; portal availability gates the entire login path."
+      ]
+    }
+  ]
+}

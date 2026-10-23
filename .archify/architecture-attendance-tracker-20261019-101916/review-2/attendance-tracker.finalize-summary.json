@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/sr1k7nth/Projects/Attendance-Tracker/.archify/architecture-attendance-tracker-20261019-101916/candidate.json",
+    "sha256": "ac270a4ee3964b35f77c73ffd7ca3818a236f34afee5e781f59002a4a63a9c22",
+    "bytes": 9333
+  },
+  "artifact": {
+    "path": "/home/sr1k7nth/Projects/Attendance-Tracker/.archify/architecture-attendance-tracker-20261019-101916/attendance-tracker.html",
+    "sha256": "c769d929611635ea6ff5f6a321a0b19f80c3d5d09040a601f4f83303dc23e58b",
+    "bytes": 834565
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/sr1k7nth/Projects/Attendance-Tracker/.archify/architecture-attendance-tracker-20261019-101916/review-2/attendance-tracker.finalize.json",
+    "summaryReceipt": "/home/sr1k7nth/Projects/Attendance-Tracker/.archify/architecture-attendance-tracker-20261019-101916/review-2/attendance-tracker.finalize-summary.json",
+    "browserCheckReceipt": "/home/sr1k7nth/Projects/Attendance-Tracker/.archify/architecture-attendance-tracker-20261019-101916/review-2/attendance-tracker.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-19T04:51:18.094Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 8079,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}
