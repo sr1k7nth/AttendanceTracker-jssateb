@@ -13,6 +13,15 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     OAUTH_ALGORITHM: str
     CORS_ORIGINS: str = "http://localhost:3000"
+    DAILY_SCRAPE_LIMIT: int = 20
+    DAILY_SCRAPE_WINDOW_HOURS: int = 24
+    # Cooldown between two scrapes of the same USN; inside the window the
+    # login route answers 429 "recently_scraped" (frontend serves cached data).
+    SCRAPE_COOLDOWN_MINUTES: int = 5
+    # Rejected logins allowed per USN per sliding window before 429.
+    FAILURE_LIMIT: int = 5
+    FAILURE_WINDOW_MINUTES: int = 15
+    SCRAPE_COOLDOWN_MINUTES: int = 5
 
     # --- donations / supporters ------------------------------------------
     DONATION_GOAL: int = 500

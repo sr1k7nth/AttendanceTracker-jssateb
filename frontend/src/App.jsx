@@ -143,10 +143,21 @@ function App() {
   }, [loggedIn]);
 
   function handleLogin() {
+    const reauth = loggedIn; // login form was opened over a live session
     setLoggedIn(true);
     setShowLogin(false);
     // Panel-credential sessions go straight to the review queue
     setTab(sessionStorage.getItem('panel_creds') ? 'admin' : 'attendance');
+    if (reauth) {
+      // The login either scraped fresh data (cooldown expired) or served the
+      // cached rows via token (cooldown active) — pull whatever is newest.
+      fetchAttendance()
+        .then((data) => {
+          setAttendance(data);
+          localStorage.setItem('attendance', JSON.stringify(data));
+        })
+        .catch(() => {}); // silently keep the cached view
+    }
   }
 
   function handleLogout() {
@@ -160,9 +171,10 @@ function App() {
     setShowSupportPopup(false);
   }
 
-  // Password is never stored, so refreshing means logging in again.
+  // Password is never stored, so refreshing means logging in again — but the
+  // session stays alive: inside the scrape cooldown the login route answers
+  // 429 and api.js falls back to the token to re-serve the last scrape.
   function handleRefresh() {
-    handleLogout();
     setShowLogin(true);
   }
 
@@ -294,16 +306,14 @@ function App() {
           />
         ) : tab === 'latest' && isAdmin ? (
           <Latest />
+        ) : showLogin ? (
+          <Login
+            onLogin={handleLogin}
+            onTerms={() => setTab('terms')}
+            onBack={() => setShowLogin(false)}
+          />
         ) : !loggedIn ? (
-          showLogin ? (
-            <Login
-              onLogin={handleLogin}
-              onTerms={() => setTab('terms')}
-              onBack={() => setShowLogin(false)}
-            />
-          ) : (
-            <Landing onLogin={() => setShowLogin(true)} />
-          )
+          <Landing onLogin={() => setShowLogin(true)} />
         ) : loading && !attendance ? (
           <p className="loading">Fetching your attendance...</p>
         ) : error ? (

@@ -180,6 +180,11 @@ See `.env.example` for a copyable template.
 | `CORS_ORIGINS` | Comma-separated allowed origins |
 | `DONATION_GOAL` | Monthly donation goal in ₹ (default `500`) |
 | `DONATIONS_UPLOAD_DIR` | Payment screenshot storage (default `backend/uploads/donations`) |
+| `SCRAPE_COOLDOWN_MINUTES` | Minutes between two scrapes of the same USN (default `5`) |
+| `DAILY_SCRAPE_LIMIT` | Scrapes allowed per USN per sliding day (default `20`) |
+| `DAILY_SCRAPE_WINDOW_HOURS` | Sliding window for the daily scrape cap (default `24`) |
+| `FAILURE_LIMIT` | Failed logins allowed per USN per window (default `5`) |
+| `FAILURE_WINDOW_MINUTES` | Sliding window for the failure budget (default `15`) |
 
 ## Local Development
 

@@ -4,19 +4,22 @@ from ..schemas import UserLogin
 from portal_client import scrapper, LoginError
 from ..models import Attendance as AttendanceModel
 from ..models import AttendanceHistory
+from ..models import LoginAttempt
 from ..database import get_db
 from ..config import settings
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from ..oauth import create_access_token
 import logging
 import secrets
 import time
+from sqlalchemy import func
 
 router = APIRouter(prefix="/scraper", tags=["Scraper"])
 
 logger = logging.getLogger("scraper.queue")
 
-# Each login re-scrapes live; no rate limit. No /scraper/refresh — the portal password is never stored.
+# Each login re-scrapes live; login() gates it (cooldown, daily cap, failure
+# budget). No /scraper/refresh — the portal password is never stored.
 
 
 def _scrape_and_cache(
@@ -102,9 +105,118 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             "admin": True,
             "usn": settings.ADMIN_USN,
         }
-    data = _scrape_and_cache(
-        user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=settings.DAILY_SCRAPE_WINDOW_HOURS)
+    key = user.usn.strip().lower()
+
+    last = (
+        db.query(AttendanceModel.timestamp)
+        .filter(func.lower(AttendanceModel.usn) == key)
+        .first()
     )
+    if last is not None:
+        age = now - last.timestamp
+        if age < timedelta(minutes=settings.SCRAPE_COOLDOWN_MINUTES):
+            remaining = max(
+                1,
+                int(
+                    (
+                        timedelta(minutes=settings.SCRAPE_COOLDOWN_MINUTES) - age
+                    ).total_seconds()
+                ),
+            )
+            raise HTTPException(
+                status_code=429,
+                detail="recently_scraped",
+                headers={"Retry-After": str(remaining)},
+            )
+
+    used = (
+        db.query(func.count(AttendanceHistory.id))
+        .filter(
+            func.lower(AttendanceHistory.usn) == key,
+            AttendanceHistory.recorded_at > cutoff,
+        )
+        .scalar()
+    )
+
+    if used >= settings.DAILY_SCRAPE_LIMIT:
+        oldest = (
+            db.query(func.min(AttendanceHistory.recorded_at))
+            .filter(
+                func.lower(AttendanceHistory.usn) == key,
+                AttendanceHistory.recorded_at > cutoff,
+            )
+            .scalar()
+        )
+        seconds = max(
+            0,
+            int(
+                (
+                    oldest + timedelta(hours=settings.DAILY_SCRAPE_WINDOW_HOURS) - now
+                ).total_seconds()
+            ),
+        )
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily fetch limit reached ({settings.DAILY_SCRAPE_LIMIT} per day). Try again later.",
+            headers={"Retry-After": str(seconds)},
+        )
+
+    # Failure budget: rejected logins for this USN in a sliding window.
+    fail_cutoff = now - timedelta(minutes=settings.FAILURE_WINDOW_MINUTES)
+    fails = (
+        db.query(func.count(LoginAttempt.id))
+        .filter(LoginAttempt.key == key, LoginAttempt.created_at > fail_cutoff)
+        .scalar()
+    )
+    if fails >= settings.FAILURE_LIMIT:
+        oldest_fail = (
+            db.query(func.min(LoginAttempt.created_at))
+            .filter(LoginAttempt.key == key, LoginAttempt.created_at > fail_cutoff)
+            .scalar()
+        )
+        seconds = max(
+            0,
+            int(
+                (
+                    oldest_fail
+                    + timedelta(minutes=settings.FAILURE_WINDOW_MINUTES)
+                    - now
+                ).total_seconds()
+            ),
+        )
+        logger.info("failure limit hit: key=%s", key)
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "Too many failed attempts "
+                f"({settings.FAILURE_LIMIT} per {settings.FAILURE_WINDOW_MINUTES} min). "
+                "Try again later."
+            ),
+            headers={"Retry-After": str(seconds)},
+        )
+
+    try:
+        data = _scrape_and_cache(
+            user.usn, user.password.get_secret_value(), db, user.leaderboard_opt, user.alias
+        )
+    except HTTPException as exc:
+        if exc.status_code == 401:
+            # The portal rejected the password — count it. 502 (portal down)
+            # is deliberately not recorded: an outage must not throttle users.
+            db.add(LoginAttempt(key=key, created_at=now))
+            db.commit()
+            logger.info("login rejected: key=%s", key)
+        raise
+
+    # A successful login forgives earlier typos for this USN.
+    db.query(LoginAttempt).filter(LoginAttempt.key == key).delete(
+        synchronize_session=False
+    )
+    db.commit()
+
     token = create_access_token(
         {"usn": user.usn, "leaderboard_opt": user.leaderboard_opt}
     )

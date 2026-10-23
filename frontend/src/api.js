@@ -16,6 +16,8 @@ async function request(path, options = {}) {
     const err = await res.json().catch(() => ({ detail: 'Request failed' }));
     const error = new Error(err.detail || `HTTP ${res.status}`);
     error.status = res.status; // callers can branch on HTTP status
+    error.detail = err.detail; // machine-readable code, e.g. "recently_scraped"
+    error.retryAfter = res.headers.get('Retry-After'); // seconds, when the server sends it
     throw error;
   }
 
@@ -23,15 +25,24 @@ async function request(path, options = {}) {
 }
 
 export async function login(usn, password, leaderboardOpt, alias) {
-  const data = await request('/scraper/login', {
-    method: 'POST',
-    body: JSON.stringify({
-      usn,
-      password,
-      alias: alias || null,
-      leaderboard_opt: leaderboardOpt,
-    }),
-  });
+  let data;
+  try {
+    data = await request('/scraper/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        usn,
+        password,
+        alias: alias || null,
+        leaderboard_opt: leaderboardOpt,
+      }),
+    });
+  } catch (err) {
+    // 429 "recently_scraped" = the cooldown gate; everything else passes through.
+    if (err.status === 429 && err.detail === 'recently_scraped') {
+      return continueFromCooldown(usn, err);
+    }
+    throw err;
+  }
   localStorage.setItem('token', data.token);
   localStorage.setItem('alias', alias);
   localStorage.setItem('leaderboard_opt', JSON.stringify(leaderboardOpt));
@@ -47,6 +58,43 @@ export async function login(usn, password, leaderboardOpt, alias) {
   sessionStorage.removeItem('panel_creds');
   localStorage.setItem('usn', usn);
   return data;
+}
+
+// The cooldown gate answers 429 "recently_scraped" instead of re-scraping a
+// USN fetched minutes ago. If this device already holds the token from that
+// scrape, the token-authenticated GET serves the same rows — the password was
+// verified when that token was issued, so nothing is bypassed. Anything else
+// (no token, another USN's token, expired token) is told how long to wait.
+async function continueFromCooldown(usn, err) {
+  const token = getToken();
+  const payload = getTokenPayload();
+  if (
+    token &&
+    payload?.usn &&
+    payload.usn.trim().toLowerCase() === usn.trim().toLowerCase()
+  ) {
+    try {
+      // Authoritative: only log the form in if the token really serves this user.
+      const data = await fetchAttendance();
+      sessionStorage.removeItem('panel_creds');
+      localStorage.setItem('usn', usn);
+      // Token / alias / leaderboard_opt stay untouched — this attempt's
+      // values never reached the portal, so nothing else is written.
+      return { token, data, cached: true };
+    } catch {
+      // Token expired or revoked — fall through to the wait message.
+    }
+  }
+  const secs = Number(err.retryAfter);
+  const wait =
+    Number.isFinite(secs) && secs > 0
+      ? secs < 90
+        ? `about ${secs} seconds`
+        : `about ${Math.ceil(secs / 60)} minutes`
+      : 'a few minutes';
+  throw new Error(
+    `This portal ID's attendance was fetched just now — try again in ${wait}.`
+  );
 }
 
 export async function fetchAttendance() {

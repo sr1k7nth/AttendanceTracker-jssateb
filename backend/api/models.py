@@ -78,3 +78,24 @@ class AttendanceHistory(Base):
     recorded_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class LoginAttempt(Base):
+    """Rejected portal logins — the per-USN failure rate limit.
+
+    Failures only: successful scrapes are already counted one-per-login by
+    attendance_history (that count is the daily cap), so this table exists
+    purely to answer "was this key rejected N times recently?". Written by
+    routes/scrape.py on a 401, cleared for that key on the next success.
+    """
+
+    __tablename__ = "login_attempts"
+    __table_args__ = (
+        Index("ix_login_attempts_key_created_at", "key", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    key = Column(String, nullable=False)  # lowercased submitted USN
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
