@@ -1,40 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchProgress, submitDonation } from '../api';
 import { UPI_ID } from '../config';
+import { assertUnderLimit, compressImage } from '../utils/image';
 import ProgressBar from './ProgressBar';
-
-function loadImageEl(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Could not read that image.'));
-    img.src = url;
-  });
-}
-
-// Shrink to ~1200px and re-encode as JPEG on-device to keep uploads small.
-async function compressImage(file) {
-  if (!file.type || !file.type.startsWith('image/')) {
-    throw new Error('Attach an image file (screenshot of the payment).');
-  }
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await loadImageEl(url);
-    const MAX = 1200;
-    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(img.width * scale));
-    canvas.height = Math.max(1, Math.round(img.height * scale));
-    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise((resolve) =>
-      canvas.toBlob(resolve, 'image/jpeg', 0.82)
-    );
-    if (!blob) throw new Error('Could not process that image.');
-    return new File([blob], 'screenshot.jpg', { type: 'image/jpeg' });
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
 
 export default function Support({ loggedIn, onLoginRequired }) {
   const [progress, setProgress] = useState(null);
@@ -93,6 +61,10 @@ export default function Support({ loggedIn, onLoginRequired }) {
     setSubmitting(true);
     try {
       const jpg = await compressImage(file);
+      // The server caps at 5MB (streamed 413); the on-device resize almost
+      // always lands far under it — this check just makes that rare case a
+      // friendly inline error instead of a server round-trip.
+      assertUnderLimit(jpg);
       const fd = new FormData();
       // Name identifies the payment; `anonymous` masks it on the wall.
       fd.append('name', trimmed);

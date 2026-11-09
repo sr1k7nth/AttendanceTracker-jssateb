@@ -8,7 +8,7 @@ from pydantic import (
     computed_field,
     model_validator,
 )
-from datetime import datetime
+from datetime import date, datetime
 
 from .metrics import compute_metrics
 
@@ -48,6 +48,13 @@ class SummarySchema(BaseModel):
     percentage: str
 
 
+class WeekOut(BaseModel):
+    """One stored week of the period grid (newest first in a list)."""
+
+    week_start: date
+    timetable: dict
+
+
 class AttendanceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -62,6 +69,8 @@ class AttendanceResponse(BaseModel):
     branch: str | None = None
     timetable: dict | None = None
     is_supporter: bool = False
+    # Stored weekly grids — populated by the route, not an ORM attribute.
+    weeks: list[WeekOut] = []
 
     # Derived from `summary` at response time rather than stored in the DB —
     # `total_avg` above is the only metric that needs a column (leaderboard
@@ -140,6 +149,68 @@ class DonationPendingOut(BaseModel):
 class ApproveRequest(BaseModel):
     # None = keep the donor-entered amount; set it to fix a typo before approving
     amount: int | None = Field(default=None, ge=1, le=10000)
+
+
+class RejectRequest(BaseModel):
+    # Why the proof was bounced — shown to the donor on their summary page.
+    reason: str | None = Field(default=None, max_length=200)
+
+
+class DonationReviewedOut(BaseModel):
+    """Admin history view — the file is already gone, metadata only."""
+
+    id: int
+    usn: str
+    name: str
+    amount: int
+    anonymous: bool
+    status: str
+    reject_reason: str | None = None
+    created_at: datetime
+    reviewed_at: datetime | None = None
+
+
+class DonationMineOut(BaseModel):
+    """Donor's own donation statuses — powers the summary-page notice."""
+
+    id: int
+    amount: int
+    status: str
+    reject_reason: str | None = None
+    created_at: datetime
+    reviewed_at: datetime | None = None
+
+
+class FeedbackOut(BaseModel):
+    """Admin view of one feedback submission."""
+
+    id: int
+    usn: str
+    category: str
+    message: str | None = None
+    status: str
+    reply: str | None = None
+    replied_at: datetime | None = None
+    last_scraped_at: datetime | None = None
+    created_at: datetime
+    screenshot_url: str | None = None
+
+
+class MyFeedbackOut(BaseModel):
+    """The donor's own feedback — powers the summary-page reply banner."""
+
+    id: int
+    category: str
+    message: str | None = None
+    reply: str | None = None
+    replied_at: datetime | None = None
+    status: str
+    created_at: datetime
+
+
+class FeedbackReplyRequest(BaseModel):
+    # Empty string clears the reply (undo); replying marks the row reviewed.
+    reply: str = Field(default="", max_length=1000)
 
 
 class LatestLoginOut(BaseModel):

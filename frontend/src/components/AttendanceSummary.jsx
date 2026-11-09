@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Timetable from './Timetable';
-import { fetchHistory } from '../api';
+import { fetchHistory, fetchMyDonations, fetchMyFeedback } from '../api';
 
 function pctColor(pct) {
   const n = parseFloat(pct);
@@ -30,7 +30,30 @@ function computeTarget(classes, present, t) {
 
 /* Hand-rolled SVG line chart — no chart library, so nothing new to install.
    Y adapts to the data (always including the 75/85 lines when in reach) so a
-   2% drift is visible instead of being flattened against a fixed 0–100 axis. */
+   2% drift is visible instead of being flattened against a fixed 0–100 axis.
+   The line is a Catmull-Rom spline (smooth, no overshoot beyond data), with a
+   gradient area fill, a draw-in animation, and invisible fat hit targets so
+   the <title> tooltips are easy to hit on touch. */
+function smoothPath(pts) {
+  if (pts.length < 3) {
+    return pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' ');
+  }
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    // 1/6 factor keeps the curve inside the data (no false dips/peaks)
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
 function HistoryChart({ points }) {
   const W = 600, H = 220, PAD_L = 32, PAD_R = 12, PAD_T = 14, PAD_B = 26;
   const vals = points.map((p) => p.total_avg);
@@ -48,10 +71,11 @@ function HistoryChart({ points }) {
   const span = Math.max(t1 - t0, 1);
   const x = (t) => PAD_L + ((t - t0) / span) * (W - PAD_L - PAD_R);
   const y = (v) => PAD_T + (1 - (v - lo) / (hi - lo)) * (H - PAD_T - PAD_B);
+  const baseY = H - PAD_B;
 
-  const path = points
-    .map((p, i) => `${i ? 'L' : 'M'}${x(Date.parse(p.recorded_at)).toFixed(1)},${y(p.total_avg).toFixed(1)}`)
-    .join(' ');
+  const pts = points.map((p) => [x(Date.parse(p.recorded_at)), y(p.total_avg)]);
+  const path = smoothPath(pts);
+  const area = `${path} L${pts[pts.length - 1][0].toFixed(1)},${baseY} L${pts[0][0].toFixed(1)},${baseY} Z`;
   const guides = [75, 85].filter((g) => g > lo && g < hi);
 
   return (
@@ -61,6 +85,12 @@ function HistoryChart({ points }) {
       role="img"
       aria-label="Overall attendance percentage over time"
     >
+      <defs>
+        <linearGradient id="history-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--green)" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="var(--green)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
       {guides.map((g) => (
         <g key={g}>
           <line
@@ -75,19 +105,27 @@ function HistoryChart({ points }) {
           </text>
         </g>
       ))}
-      <line className="history-axis-line" x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={H - PAD_B} />
-      <path className="history-line" d={path} />
-      {points.map((p, i) => (
-        <circle
-          key={i}
-          className={`history-dot ${pctColor(String(p.total_avg))}`}
-          cx={x(Date.parse(p.recorded_at))}
-          cy={y(p.total_avg)}
-          r={3}
-        >
-          <title>{`${fmtDate(p.recorded_at)} — ${p.total_avg}%`}</title>
-        </circle>
-      ))}
+      <path className="history-area" d={area} />
+      <path className="history-line" d={path} pathLength="1" />
+      {points.map((p, i) => {
+        const cx = pts[i][0];
+        const cy = pts[i][1];
+        const last = i === points.length - 1;
+        return (
+          <g key={i}>
+            {/* fat invisible hit target — the tooltip lives here */}
+            <circle className="history-hit" cx={cx} cy={cy} r={12}>
+              <title>{`${fmtDate(p.recorded_at)} — ${p.total_avg}%`}</title>
+            </circle>
+            <circle
+              className={`history-dot ${pctColor(String(p.total_avg))}${last ? ' last' : ''}`}
+              cx={cx}
+              cy={cy}
+              r={last ? 1.5 : 1.1}
+            />
+          </g>
+        );
+      })}
       <text className="history-axis" x={PAD_L} y={H - 8} textAnchor="start">
         {fmtDate(points[0].recorded_at)}
       </text>
@@ -101,13 +139,50 @@ function HistoryChart({ points }) {
 export default function AttendanceSummary({ data, onRefresh, loading, onDonate }) {
   const [target, setTarget] = useState('');
   const [calculated, setCalculated] = useState(null);
+  const [missCount, setMissCount] = useState('');
+  const [missResult, setMissResult] = useState(null);
   const [openSubj, setOpenSubj] = useState(null); // subject code with its calculator open
   const [subjTarget, setSubjTarget] = useState(''); // carried across subjects
   const [subjResult, setSubjResult] = useState(null);
+  const [subjMiss, setSubjMiss] = useState('');
+  const [subjMissResult, setSubjMissResult] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyErr, setHistoryErr] = useState('');
+  const [notice, setNotice] = useState(null);
+  const [replyNotice, setReplyNotice] = useState(null);
+
+  // Latest reviewed donation (approved/rejected) → summary-page notice.
+  // Pending rows wait silently; dismissal is remembered per donation id.
+  useEffect(() => {
+    fetchMyDonations()
+      .then((rows) => {
+        const latest = rows.find(
+          (r) => r.status === 'rejected' || r.status === 'approved'
+        );
+        if (
+          latest &&
+          localStorage.getItem(`donation_notice_seen_${latest.id}`) !== latest.status
+        ) {
+          setNotice(latest);
+        }
+      })
+      .catch(() => {}); // notice is best-effort
+  }, []);
+
+  // Latest admin reply to one of this user's feedback submissions → banner.
+  // The seen-key includes replied_at, so an edited reply shows up again.
+  useEffect(() => {
+    fetchMyFeedback()
+      .then((rows) => {
+        const latest = rows.find((r) => r.reply);
+        if (!latest) return;
+        const key = `feedback_reply_seen_${latest.id}_${latest.replied_at}`;
+        if (localStorage.getItem(key) !== 'seen') setReplyNotice(latest);
+      })
+      .catch(() => {}); // notice is best-effort
+  }, []);
 
   if (!data) return null;
 
@@ -118,11 +193,26 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
     setCalculated(computeTarget(totalClasses, totalPresent, parseFloat(target)));
   }
 
+  // "What if I miss X classes?" — those X count as held-but-absent:
+  // new % = present / (classes + X).
+  function handleMissCalculate() {
+    const miss = parseInt(missCount, 10);
+    if (isNaN(miss) || miss < 0 || totalClasses === 0) {
+      setMissResult(null);
+      return;
+    }
+    const pct = ((totalPresent / (totalClasses + miss)) * 100).toFixed(2);
+    const band =
+      parseFloat(pct) >= 85 ? 'high' : parseFloat(pct) >= 75 ? 'mid' : 'low';
+    setMissResult({ pct, band });
+  }
+
   // One subject calculator at a time. Switching subjects clears its result but
   // keeps the last target entered — the same goal is usually checked everywhere.
   function toggleSubject(code) {
     setOpenSubj(openSubj === code ? null : code);
     setSubjResult(null);
+    setSubjMissResult(null);
   }
 
   function handleSubjCalculate(s) {
@@ -133,6 +223,21 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
         parseFloat(subjTarget)
       )
     );
+  }
+
+  // Subject-level "what if I miss X" — same held-but-absent math, per subject.
+  function handleSubjMissCalculate(s) {
+    const miss = parseInt(subjMiss, 10);
+    const held = parseInt(s.classes || '0');
+    if (isNaN(miss) || miss < 0 || held === 0) {
+      setSubjMissResult(null);
+      return;
+    }
+    const present = parseInt(s.present || '0');
+    const pct = ((present / (held + miss)) * 100).toFixed(2);
+    const band =
+      parseFloat(pct) >= 85 ? 'high' : parseFloat(pct) >= 75 ? 'mid' : 'low';
+    setSubjMissResult({ pct, band });
   }
 
   function toggleHistory() {
@@ -151,6 +256,60 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
 
   return (
     <div>
+      {/* Admin reply to a feedback submission — same loop as donation notices */}
+      {replyNotice && (
+        <div className="donation-notice feedback-reply">
+          <div>
+            <strong>Admin replied to your feedback</strong>
+            {replyNotice.message && (
+              <p className="reply-quoted">You: &ldquo;{replyNotice.message}&rdquo;</p>
+            )}
+            <p>{replyNotice.reply}</p>
+          </div>
+          <button
+            type="button"
+            className="donation-notice-close"
+            aria-label="Dismiss"
+            onClick={() => {
+              localStorage.setItem(
+                `feedback_reply_seen_${replyNotice.id}_${replyNotice.replied_at}`,
+                'seen'
+              );
+              setReplyNotice(null);
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Donation review notice — top of the page, first thing seen */}
+      {notice && (
+        <div className={`donation-notice ${notice.status}`}>
+          <div>
+            <strong>
+              {notice.status === 'rejected'
+                ? `Your ₹${notice.amount} donation was rejected.`
+                : `Your ₹${notice.amount} donation was approved — thanks! 🎉`}
+            </strong>
+            {notice.status === 'rejected' && notice.reject_reason && (
+              <p>Reason: {notice.reject_reason}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="donation-notice-close"
+            aria-label="Dismiss"
+            onClick={() => {
+              localStorage.setItem(`donation_notice_seen_${notice.id}`, notice.status);
+              setNotice(null);
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="stats">
         <div className="stat-card stat-overall">
@@ -170,8 +329,13 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
         <div className="stat-card stat-row">
           <div className="stat-label">Can miss</div>
           <div className="stat-row-values">
-            <span className="stat-value green">{data.can_miss85}</span>
-            <span className="stat-sub">at 85%</span>
+            {/* can-miss @85 is structurally 0 while below 85% — only show what's live */}
+            {data.total_avg >= 85 && (
+              <>
+                <span className="stat-value green">{data.can_miss85}</span>
+                <span className="stat-sub">at 85%</span>
+              </>
+            )}
             <span className="stat-value yellow">{data.can_miss75}</span>
             <span className="stat-sub">at 75%</span>
           </div>
@@ -181,8 +345,13 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
           <div className="stat-row-values">
             <span className="stat-value red">{data.need_to_attend85}</span>
             <span className="stat-sub">at 85%</span>
-            <span className="stat-value red">{data.need_to_attend75}</span>
-            <span className="stat-sub">at 75%</span>
+            {/* need-to-attend @75 is structurally 0 once above 75% */}
+            {data.total_avg < 75 && (
+              <>
+                <span className="stat-value red">{data.need_to_attend75}</span>
+                <span className="stat-sub">at 75%</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -237,6 +406,7 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
               onChange={(e) => setTarget(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCalculate()}
             />
+            <span className="stat-sub">%</span>
             <button className="btn btn-primary calc-btn" onClick={handleCalculate}>
               Calculate
             </button>
@@ -250,11 +420,37 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
             }
           </p>
         )}
+
+        {/* Miss calculator — "what if I skip X classes?" */}
+        <div className="stat-card stat-row" style={{ flexWrap: 'wrap' }}>
+          <div className="stat-label">What if I miss</div>
+          <div className="stat-row-values">
+            <input
+              type="number"
+              className="calc-input"
+              placeholder="e.g. 5"
+              min="0"
+              value={missCount}
+              onChange={(e) => setMissCount(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleMissCalculate()}
+            />
+            <span className="stat-sub">classes</span>
+            <button className="btn btn-primary calc-btn" onClick={handleMissCalculate}>
+              Calculate
+            </button>
+          </div>
+        </div>
+        {missResult && (
+          <p className="calc-result">
+            Your attendance drops to{' '}
+            <strong className={`stat-value-inline ${missResult.band}`}>{missResult.pct}%</strong>.
+          </p>
+        )}
       </div>
 
       {/* Weekly Attendance (moved above Subject-wise) */}
       <div style={{ marginTop: '2rem' }}>
-        <Timetable data={data.timetable} />
+        <Timetable weeks={data.weeks} data={data.timetable} />
       </div>
 
       {/* Subject-wise Attendance */}
@@ -327,6 +523,7 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
                               onKeyDown={(e) => e.key === 'Enter' && handleSubjCalculate(s)}
                               aria-label={`Target percentage for ${s.name}`}
                             />
+                            <span className="stat-sub">%</span>
                             <button
                               type="button"
                               className="btn btn-primary calc-btn"
@@ -341,6 +538,37 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
                                 ? <>You can miss <strong>{subjResult.canMiss}</strong> more {subjResult.canMiss === 1 ? 'class' : 'classes'}.</>
                                 : <>You need to attend <strong>{subjResult.needAttend}</strong> more {subjResult.needAttend === 1 ? 'class' : 'classes'}.</>
                               }
+                            </p>
+                          )}
+
+                          {/* Miss calculator — same as the global one, scoped to this subject */}
+                          <div className="subj-expand-controls">
+                            <input
+                              type="number"
+                              className="calc-input"
+                              placeholder="e.g. 3"
+                              min="0"
+                              value={subjMiss}
+                              onChange={(e) => {
+                                setSubjMiss(e.target.value);
+                                setSubjMissResult(null);
+                              }}
+                              onKeyDown={(e) => e.key === 'Enter' && handleSubjMissCalculate(s)}
+                              aria-label={`Classes to miss in ${s.name}`}
+                            />
+                            <span className="stat-sub">classes</span>
+                            <button
+                              type="button"
+                              className="btn btn-primary calc-btn"
+                              onClick={() => handleSubjMissCalculate(s)}
+                            >
+                              Calculate
+                            </button>
+                          </div>
+                          {subjMissResult && (
+                            <p className="calc-result">
+                              Drops to{' '}
+                              <strong className={`stat-value-inline ${subjMissResult.band}`}>{subjMissResult.pct}%</strong>.
                             </p>
                           )}
                         </>

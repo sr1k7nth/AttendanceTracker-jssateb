@@ -29,6 +29,7 @@ routes and the DB write path are unchanged.
 
 import base64
 import re
+from datetime import date, datetime
 from pathlib import Path
 
 import httpx
@@ -45,6 +46,8 @@ PORTAL_URL = "https://jssateb.azurewebsites.net/RApps/Home/login.aspx?E=1"
 BASE = "https://jssateb.azurewebsites.net"
 _HSDATA_URL = f"{BASE}/RApps/Home/HSData.aspx"
 _ATTENDANCE_URL = f"{BASE}/apps/TimeTable/StudentAttendance.aspx?WAT=1033"
+# The ◀ button's Take_Action() sets form.action = "?" — same path, empty query.
+_ATTENDANCE_POST_URL = f"{BASE}/apps/TimeTable/StudentAttendance.aspx"
 _SUMMARY_URL = f"{BASE}/apps/TimeTable/StudentAttendanceSummary.aspx"
 
 # A believable desktop UA — the portal is indifferent, but a python-requests
@@ -177,6 +180,32 @@ def parse_summary(soup):
     return summary, branch, semester
 
 
+def parse_week_start(soup: BeautifulSoup) -> date | None:
+    """The week the page is showing — `txtChangeWeekStartDate` (dd/mm/yyyy)."""
+    inp = soup.find("input", id="txtChangeWeekStartDate")
+    if inp is None or not inp.get("value"):
+        return None
+    try:
+        return datetime.strptime(inp["value"].strip(), "%d/%m/%Y").date()
+    except ValueError:
+        return None
+
+
+def prev_week_token(soup: BeautifulSoup) -> str | None:
+    """The txtHMode value that takes the page to the previous week."""
+    match = re.search(r"Take_Action\('(PREVIOUSWEEK\]\[[^']+)'\)", str(soup))
+    return match.group(1) if match else None
+
+
+def parse_week_page(soup: BeautifulSoup) -> dict | None:
+    """{week_start, timetable} from a StudentAttendance page, or None."""
+    week_start = parse_week_start(soup)
+    table = soup.find("table", {"class": "table"})
+    if week_start is None or table is None:
+        return None
+    return {"week_start": week_start, "timetable": build_table(table)}
+
+
 # ---------------------------------------------------------------------------
 # HTTP plumbing
 # ---------------------------------------------------------------------------
@@ -207,18 +236,89 @@ def _validate(soup: BeautifulSoup) -> str:
     return box.get_text(strip=True) if box else ""
 
 
-def scrapper(usn: str, password: str):
+def _navigate_previous_week(
+    client: httpx.Client, soup: BeautifulSoup
+) -> tuple[dict, BeautifulSoup] | None:
+    """POST the form with txtHMode=PREVIOUSWEEK → the previous week's page.
+
+    Mirrors Take_Action(): the button sets the hidden txtHMode to
+    'PREVIOUSWEEK][<token>' and submits the whole form to `action="?"` —
+    same path, empty query. Falls back to ?WAT=1033 if the portal refuses
+    the bare path. Returns ({week_start, timetable}, soup) or None.
+    """
+    token = prev_week_token(soup)
+    if token is None:
+        return None
+
+    fields = _form_fields(soup)
+    fields["txtHMode"] = token
+
+    resp = client.post(
+        _ATTENDANCE_POST_URL, data=fields, headers={"Referer": _ATTENDANCE_URL}
+    )
+    resp.raise_for_status()
+    page = BeautifulSoup(resp.text, "lxml")
+    parsed = parse_week_page(page)
+    if parsed is None:
+        # bare path refused — retry the exact form action the page carries
+        resp = client.post(
+            _ATTENDANCE_URL, data=fields, headers={"Referer": _ATTENDANCE_URL}
+        )
+        resp.raise_for_status()
+        page = BeautifulSoup(resp.text, "lxml")
+        parsed = parse_week_page(page)
+        if parsed is None:
+            return None
+    return parsed, page
+
+
+def _collect_previous_weeks(
+    client: httpx.Client, soup: BeautifulSoup, count: int
+) -> list[dict]:
+    """Walk back `count` weeks, collecting {week_start, timetable} newest-first.
+
+    Stops early when the portal offers no previous-week token (semester
+    start) or a navigation doesn't move the week forward.
+    """
+    weeks: list[dict] = []
+    seen: set[date] = set()
+    for _ in range(count):
+        result = _navigate_previous_week(client, soup)
+        if result is None:
+            break
+        parsed, soup = result
+        if parsed["week_start"] in seen:
+            break  # portal didn't move — stop rather than loop forever
+        seen.add(parsed["week_start"])
+        weeks.append(parsed)
+    return weeks
+
+
+def scrapper(
+    usn: str,
+    password: str,
+    stored_latest_week: date | None = None,
+):
     """Fetch attendance from the portal. Returns the API's attendance dict.
 
     Raises LoginError for bad credentials (routes turn that into 401).
     Transport failures and unrecognised portal replies come back as
     {"status": "portal down", ...} (routes turn that into 502).
+
+    `stored_latest_week` drives weekly-history capture, in the same client
+    session (no re-login):
+      - None (first scrape after deploy)  → current + previous 4 weeks
+      - scraped week newer than stored    → current + previous 1 week
+      - scraped week == stored (same week) → current week only
+
+    The result carries `week_start` (date) and `previous_weeks`
+    ([{week_start, timetable}, …] newest-first) alongside the usual fields.
     """
     try:
         with httpx.Client(
             follow_redirects=True, timeout=_TIMEOUT, headers=_HEADERS
         ) as client:
-            return _scrape(client, usn, password)
+            return _scrape(client, usn, password, stored_latest_week)
     except httpx.HTTPError as exc:
         # Transport-level failure (DNS, timeout, connection reset).
         return {"status": "portal down", "error": type(exc).__name__}
@@ -226,7 +326,12 @@ def scrapper(usn: str, password: str):
         return {"status": "portal down", "error": str(exc)}
 
 
-def _scrape(client: httpx.Client, usn: str, password: str) -> dict:
+def _scrape(
+    client: httpx.Client,
+    usn: str,
+    password: str,
+    stored_latest_week: date | None = None,
+) -> dict:
     # ---- 1. fetch the login form ---------------------------------------
     page = client.get(PORTAL_URL)
     page.raise_for_status()
@@ -301,12 +406,23 @@ def _scrape(client: httpx.Client, usn: str, password: str) -> dict:
     attendance.raise_for_status()
     attendance_soup = BeautifulSoup(attendance.text, "lxml")
 
-    table = attendance_soup.find("table", {"class": "table"})
-    if table is None:
+    current = parse_week_page(attendance_soup)
+    if current is None:
         return {"status": "portal down", "error": "No table found"}
-
-    timetable = build_table(table)
+    timetable = current["timetable"]
+    week_start = current["week_start"]
     absent_periods = derive_absent_periods(timetable)
+
+    # ---- weekly history: how far back should this login walk? -----------
+    if stored_latest_week is None:
+        back = 4  # first scrape ever — backfill the previous four weeks
+    elif week_start > stored_latest_week:
+        back = 1  # a new week started — capture the finished one
+    else:
+        back = 0  # same week — the live grid is the only thing that moves
+    previous_weeks = (
+        _collect_previous_weeks(client, attendance_soup, back) if back else []
+    )
 
     # ---- 4b. the summary -------------------------------------------------
     # The Summary button does postwith(...StudentAttendanceSummary.aspx,
@@ -338,6 +454,8 @@ def _scrape(client: httpx.Client, usn: str, password: str) -> dict:
         "summary": summary,
         "absent_periods": absent_periods,
         "timetable": timetable,
+        "week_start": week_start,
+        "previous_weeks": previous_weeks,
         **compute_metrics(summary),
         "branch": branch,
         "sem": semester,

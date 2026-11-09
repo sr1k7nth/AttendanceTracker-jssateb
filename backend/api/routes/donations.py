@@ -13,7 +13,7 @@ from ..database import get_db
 from ..models import Attendance as AttendanceModel
 from ..models import Donation
 from ..oauth import get_current_user
-from ..schemas import ProgressOut, SupporterOut
+from ..schemas import DonationMineOut, ProgressOut, SupporterOut
 
 router = APIRouter(tags=["Support"])
 
@@ -100,6 +100,36 @@ def support_progress(db: Session = Depends(get_db)):
         lifetime_raised=life_raised,
         lifetime_count=life_count,
     )
+
+
+@router.get("/donations/mine", response_model=list[DonationMineOut])
+def my_donations(
+    usn: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """The donor's own submissions — powers the summary-page notice.
+
+    A rejected row carries its reason so the donor knows what to fix; an
+    approved one lets the page say thanks. Screenshot paths are never sent.
+    """
+    rows = (
+        db.query(Donation)
+        .filter(Donation.usn == usn)
+        .order_by(Donation.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    return [
+        DonationMineOut(
+            id=row.id,  # type: ignore
+            amount=row.amount,  # type: ignore
+            status=row.status,  # type: ignore
+            reject_reason=row.reject_reason,  # type: ignore
+            created_at=row.created_at,  # type: ignore
+            reviewed_at=row.reviewed_at,  # type: ignore
+        )
+        for row in rows
+    ]
 
 
 @router.post("/donations", status_code=201)

@@ -28,3 +28,10 @@ backend/login.html
 backend/sample.html
 backend/sample_test.html
 reference/
+
+.archify/
+
+.projectmem/events.jsonl
+.projectmem/watch.pid
+.projectmem/watch.log
+.projectmem/structure.json

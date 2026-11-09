@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from .config import settings
-from .routes import fetch_attendance, scrape, leaderboard, donations, admin
+from .routes import fetch_attendance, scrape, leaderboard, donations, admin, feedback
 import logging
 
 # Surface app logs (e.g. scrape durations) in dev output and
@@ -42,6 +42,7 @@ app.include_router(fetch_attendance.router)
 app.include_router(scrape.router)
 app.include_router(leaderboard.router)
 app.include_router(donations.router)
+app.include_router(feedback.router)
 app.include_router(admin.router)
 
 
