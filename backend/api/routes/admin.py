@@ -199,6 +199,7 @@ def latest_logins(
 
     No row limit: the table is one row per user, so its size is bounded by
     the user base. Times are tz-aware ISO; the frontend renders them in IST.
+    USNs are hashed so the raw portal ID isn't exposed in this panel.
     """
     rows = (
         db.query(AttendanceModel)
@@ -207,7 +208,7 @@ def latest_logins(
     )
     return [
         LatestLoginOut(
-            usn=row.usn,  # type: ignore
+            usn="#" + hashlib.sha256(str(row.usn).encode("utf-8")).hexdigest()[:12],  # type: ignore
             alias=row.alias,
             total_avg=row.total_avg,
             branch=row.branch,
