@@ -2,6 +2,7 @@ from .database import Base
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -42,7 +43,10 @@ class Donation(Base):
     __tablename__ = "donations"
 
     id = Column(Integer, primary_key=True)
-    usn = Column(String, ForeignKey("attendance.usn"), nullable=False)
+    # ondelete CASCADE matches the live DB constraint (alembic check drift otherwise)
+    usn = Column(
+        String, ForeignKey("attendance.usn", ondelete="CASCADE"), nullable=False
+    )
     name = Column(String(30), nullable=False)
     message = Column(String(200), nullable=True)
     # Private note from the donor to the admin — never leaves the review
@@ -50,8 +54,12 @@ class Donation(Base):
     admin_note = Column(String(200), nullable=True)
     amount = Column(Integer, nullable=False)
     anonymous = Column(Boolean, nullable=False, default=False)
-    screenshot_file = Column(String, nullable=False)
+    # Nullable: the file is deleted the moment the donation is reviewed —
+    # the row itself stays as the audit trail.
+    screenshot_file = Column(String, nullable=True)
     status = Column(String(16), nullable=False, default="pending")
+    # Why a proof was bounced — shown to the donor on their summary page.
+    reject_reason = Column(String(200), nullable=True)
     created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -76,6 +84,62 @@ class AttendanceHistory(Base):
     )
     total_avg = Column(Float, nullable=False)
     recorded_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class WeeklyTimetable(Base):
+    """One stored week of the portal's period grid, per student.
+
+    `week_start` is the Monday the portal page names (dd/mm/yyyy on the
+    page, stored as a date). The current in-progress week upserts itself on
+    every scrape; past weeks are captured once (first scrape: the previous
+    four, then one more each time a new week begins) and stay frozen.
+    """
+
+    __tablename__ = "weekly_timetables"
+    __table_args__ = (
+        Index("ix_weekly_timetables_usn_week", "usn", "week_start", unique=True),
+    )
+
+    id = Column(Integer, primary_key=True)
+    usn = Column(
+        String, ForeignKey("attendance.usn", ondelete="CASCADE"), nullable=False
+    )
+    week_start = Column(Date, nullable=False)
+    timetable = Column(JSONB, nullable=False)
+    scraped_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class Feedback(Base):
+    """In-app feedback — one of four categories, optionally with a screenshot.
+
+    `error` and `data_removal` submissions must carry a screenshot; for
+    `data_removal` the user's last portal scrape time is stored alongside as
+    the identity proof. Rate limit: 3 per user per sliding day.
+    """
+
+    __tablename__ = "feedback"
+    __table_args__ = (
+        Index("ix_feedback_usn_created_at", "usn", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    usn = Column(
+        String, ForeignKey("attendance.usn", ondelete="CASCADE"), nullable=False
+    )
+    category = Column(String(16), nullable=False)  # feedback|error|feature|data_removal
+    message = Column(String(1000), nullable=True)
+    screenshot_file = Column(String, nullable=True)
+    status = Column(String(16), nullable=False, default="new")
+    # data_removal proof — the user's last scrape when they submitted
+    last_scraped_at = Column(DateTime(timezone=True), nullable=True)
+    # Admin's answer — shown to the user as a summary-page banner
+    reply = Column(String(1000), nullable=True)
+    replied_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 

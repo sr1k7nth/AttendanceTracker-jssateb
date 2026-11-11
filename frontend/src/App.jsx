@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
-import { getToken, fetchAttendance, logout } from './api';
+import { getToken, fetchAttendance, fetchBetaStatus, logout } from './api';
 import Login from './components/Login';
 import Landing from './components/Landing';
 import AttendanceSummary from './components/AttendanceSummary';
@@ -11,24 +11,22 @@ import Support from './components/Support';
 import Supporters from './components/Supporters';
 import DonationPopup from './components/DonationPopup';
 import AdminPanel from './components/AdminPanel';
+import Feedback from './components/Feedback';
 import Latest from './components/Latest';
 import './index.css';
 
-const FEEDBACK_URL = 'https://forms.gle/RW7jREYrceoacjxY9';
-const MENU_ITEMS = ['support', 'faq', 'terms', 'changelog'];
+const REPO_URL = 'https://github.com/sr1k7nth/AttendanceTracker-jssateb';
+const MENU_ITEMS = ['faq', 'terms', 'changelog', 'feedback', 'github'];
 const MENU_LABELS = {
-  support: 'Donate',
   faq: 'FAQ',
   terms: 'Terms',
   changelog: 'Changelog',
+  feedback: 'Feedback',
+  github: 'GitHub',
 };
-// Footer mirrors every nav destination (the admin tab stays out — it only
-// exists for a panel-credential session).
+// Footer mirrors the secondary pages (the main tabs — Summary, Leaderboard,
+// Supporters, Donate — all live in the navbar now).
 const FOOTER_NAV = [
-  ['attendance', 'Summary'],
-  ['leaderboard', 'Leaderboard'],
-  ['supporters', 'Supporters'],
-  ['support', 'Donate'],
   ['faq', 'FAQ'],
   ['terms', 'Terms'],
   ['changelog', 'Changelog'],
@@ -46,12 +44,23 @@ function App() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // Returning users (usn in localStorage) skip the landing page
-  const [showLogin, setShowLogin] = useState(() => !!localStorage.getItem('usn'));
+  // Returning users (usn in localStorage) skip the landing page — but a
+  // live token means a valid session, so a refresh must reopen the summary,
+  // not the login form.
+  const [showLogin, setShowLogin] = useState(
+    () => !!localStorage.getItem('usn') && !getToken()
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSupportPopup, setShowSupportPopup] = useState(false);
+  // Opening the feedback page from the error block presets the Error type
+  const [feedbackPreset, setFeedbackPreset] = useState(null);
   const menuRef = useRef(null);
   const popupCountedRef = useRef(false);
+  // Beta check: branch screenshot request — dismissed per branch so it
+  // doesn't nag across sessions (the "What's new" banner is the only
+  // non-dismissible one).
+  const [betaStatus, setBetaStatus] = useState(null);
+  const [betaDismissed, setBetaDismissed] = useState(false);
 
   // Admin UI only for a panel-credential session — never a normal login.
   const isAdmin = !!sessionStorage.getItem('panel_creds');
@@ -106,20 +115,33 @@ function App() {
     return true;
   }
 
-  // Popup due on opens 1, 3, 6, 9, 12…; other gates live in openDonationPopup().
+  // Popup due on opens 1, 4, 8, 12… (every 4th scrape/login); other gates
+  // live in openDonationPopup().
   useEffect(() => {
     if (!loggedIn) return;
     if (popupCountedRef.current) return; // StrictMode double-mount guard
     popupCountedRef.current = true;
     const n = (parseInt(localStorage.getItem('app_opens') || '0', 10) || 0) + 1;
     localStorage.setItem('app_opens', String(n));
-    if (n === 1 || n % 3 === 0) openDonationPopup();
+    if (n === 1 || n % 4 === 0) openDonationPopup();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loggedIn]);
 
   // Fetch attendance on login
   useEffect(() => {
     if (!loggedIn) return;
+    // Beta-check banner state: branch + how many beta screenshots that
+    // branch is in. The banner shows while count < target and isn't dismissed.
+    fetchBetaStatus()
+      .then((s) => {
+        setBetaStatus(s);
+        setBetaDismissed(
+          s.branch
+            ? localStorage.getItem(`beta_banner_dismissed_${s.branch}`) === '1'
+            : false
+        );
+      })
+      .catch(() => setBetaStatus(null)); // never block the page
     // Show cached data first, fetch in background
     if (attendance) {
       fetchAttendance()
@@ -254,6 +276,12 @@ function App() {
               >
                 Supporters
               </button>
+              <button
+                className={`nav-donate${tab === 'support' ? ' active' : ''}`}
+                onClick={() => setTab('support')}
+              >
+                Donate
+              </button>
             </nav>
             <div className="nav-menu" ref={menuRef}>
               <button
@@ -266,19 +294,33 @@ function App() {
               </button>
               {menuOpen && (
                 <div className="nav-menu-dropdown" role="menu">
-                  {menuItems.map((item) => (
-                    <button
-                      key={item}
-                      role="menuitem"
-                      className={tab === item ? 'active' : ''}
-                      onClick={() => {
-                        setTab(item);
-                        setMenuOpen(false);
-                      }}
-                    >
-                      {menuLabels[item]}
-                    </button>
-                  ))}
+                  {menuItems.map((item) =>
+                    item === 'github' ? (
+                      <a
+                        key={item}
+                        role="menuitem"
+                        href={REPO_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="nav-menu-link"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {menuLabels[item]}
+                      </a>
+                    ) : (
+                      <button
+                        key={item}
+                        role="menuitem"
+                        className={tab === item ? 'active' : ''}
+                        onClick={() => {
+                          setTab(item);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        {menuLabels[item]}
+                      </button>
+                    )
+                  )}
                 </div>
               )}
             </div>
@@ -287,12 +329,70 @@ function App() {
       </header>
 
       <main className="app-content">
+        {/* Permanent announcement — mentions the changelog + feedback route.
+            Renders on every page so it reads as a site notice, not a quiz.
+            Only after login (landing/login/terms/faq visitors don't see it). */}
+        {loggedIn && (
+          <div className="site-notice" role="note">
+            <span className="site-notice-text">
+              <strong>What&apos;s new:</strong> I shipped the in-app feedback page with
+              admin replies, a fresh zinc + green design, and smarter calculators.{' '}
+              <button type="button" className="link" onClick={() => goToTab('changelog')}>
+                See the changelog
+              </button>
+              . Hit any snag? The{' '}
+              <button type="button" className="link" onClick={() => goToTab('feedback')}>
+                Feedback page
+              </button>{' '}
+              takes errors with screenshots, and feature requests too.
+            </span>
+          </div>
+        )}
+        {loggedIn && betaStatus && !betaDismissed && betaStatus.screenshots < betaStatus.target && (
+          <div className="site-notice beta-notice" role="note">
+            <span className="site-notice-text">
+              <strong>Help me check if it&apos;s working fine:</strong> I can&apos;t peek
+              into every branch from here, so help me check how this site is working
+              for your branch. Open{' '}
+              <button
+                type="button"
+                className="link"
+                onClick={() => {
+                  setFeedbackPreset('beta_screenshot');
+                  setTab('feedback');
+                  window.scrollTo(0, 0);
+                }}
+              >
+                Beta screenshot feedback
+              </button>{' '}
+              and drop a screenshot of how the site looks for your branch — your USN
+              is already attached.
+            </span>
+            <button
+              type="button"
+              className="donation-notice-close"
+              aria-label="Dismiss"
+              onClick={() => {
+                localStorage.setItem(`beta_banner_dismissed_${betaStatus.branch}`, '1');
+                setBetaDismissed(true);
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {tab === 'changelog' ? (
           <Changelog />
         ) : tab === 'terms' ? (
           <Terms />
         ) : tab === 'faq' ? (
           <Faq />
+        ) : tab === 'feedback' ? (
+          <Feedback
+            loggedIn={loggedIn}
+            onLoginRequired={() => setShowLogin(true)}
+            initialCategory={feedbackPreset}
+          />
         ) : tab === 'support' ? (
           <Support loggedIn={loggedIn} onLoginRequired={() => setShowLogin(true)} />
         ) : tab === 'supporters' ? (
@@ -328,7 +428,17 @@ function App() {
               {loading ? 'Refreshing...' : 'Try again'}
             </button>
             <p className="error-feedback">
-              Something wrong? <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">Report it</a>
+              Something wrong?{' '}
+              <button
+                className="faq-link"
+                onClick={() => {
+                  setFeedbackPreset('error');
+                  setTab('feedback');
+                  window.scrollTo(0, 0);
+                }}
+              >
+                Report it
+              </button>
             </p>
           </div>
         ) : tab === 'attendance' ? (
@@ -365,14 +475,21 @@ function App() {
             </Fragment>
           ))}
           <span className="footer-sep">·</span>
-          <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+          <button
+            className="faq-link"
+            onClick={() => {
+              setFeedbackPreset(null);
+              goToTab('feedback');
+            }}
+          >
             Feedback
-          </a>
+          </button>
           <span className="footer-sep">·</span>
           <a
-            href="https://github.com/sr1k7nth/AttendanceTracker-jssateb"
+            href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
+            className="footer-github"
           >
             GitHub
           </a>

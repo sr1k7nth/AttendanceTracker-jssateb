@@ -5,6 +5,7 @@ from portal_client import scrapper, LoginError
 from ..models import Attendance as AttendanceModel
 from ..models import AttendanceHistory
 from ..models import LoginAttempt
+from ..models import WeeklyTimetable
 from ..database import get_db
 from ..config import settings
 from datetime import datetime, timedelta, timezone
@@ -22,6 +23,24 @@ logger = logging.getLogger("scraper.queue")
 # budget). No /scraper/refresh — the portal password is never stored.
 
 
+def _upsert_week(db: Session, usn: str, week_start, timetable) -> None:
+    """Store one week's grid — current weeks refresh, past weeks freeze."""
+    row = (
+        db.query(WeeklyTimetable)
+        .filter(WeeklyTimetable.usn == usn, WeeklyTimetable.week_start == week_start)
+        .first()
+    )
+    if row is None:
+        db.add(
+            WeeklyTimetable(
+                usn=usn, week_start=week_start, timetable=timetable
+            )
+        )
+    else:
+        row.timetable = timetable  # type: ignore[assignment]
+        row.scraped_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+
+
 def _scrape_and_cache(
     usn: str,
     password: str,
@@ -30,8 +49,13 @@ def _scrape_and_cache(
     alias: str | None = None,
 ):
     scrape_started = time.perf_counter()
+    stored_latest_week = (
+        db.query(func.max(WeeklyTimetable.week_start))
+        .filter(WeeklyTimetable.usn == usn)
+        .scalar()
+    )
     try:
-        data = scrapper(usn, password)
+        data = scrapper(usn, password, stored_latest_week=stored_latest_week)
     except LoginError:
         raise HTTPException(401, detail="Invalid credentials") from None
     except Exception:
@@ -82,6 +106,12 @@ def _scrape_and_cache(
     # percentage didn't move since the last check-in.
     db.add(AttendanceHistory(usn=usn, total_avg=data["total_avg"]))
 
+    # Weekly history: current week upserts every scrape; previous weeks
+    # arrive only when the scraper walked back (first scrape / new week).
+    _upsert_week(db, usn, data["week_start"], data["timetable"])
+    for week in data.get("previous_weeks", []):
+        _upsert_week(db, usn, week["week_start"], week["timetable"])
+
     db.commit()
     return data
 
@@ -109,60 +139,64 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=settings.DAILY_SCRAPE_WINDOW_HOURS)
     key = user.usn.strip().lower()
+    is_admin = bool(settings.ADMIN_USN) and key == settings.ADMIN_USN.strip().lower()
 
-    last = (
-        db.query(AttendanceModel.timestamp)
-        .filter(func.lower(AttendanceModel.usn) == key)
-        .first()
-    )
-    if last is not None:
-        age = now - last.timestamp
-        if age < timedelta(minutes=settings.SCRAPE_COOLDOWN_MINUTES):
-            remaining = max(
-                1,
-                int(
-                    (
-                        timedelta(minutes=settings.SCRAPE_COOLDOWN_MINUTES) - age
-                    ).total_seconds()
-                ),
-            )
-            raise HTTPException(
-                status_code=429,
-                detail="recently_scraped",
-                headers={"Retry-After": str(remaining)},
-            )
-
-    used = (
-        db.query(func.count(AttendanceHistory.id))
-        .filter(
-            func.lower(AttendanceHistory.usn) == key,
-            AttendanceHistory.recorded_at > cutoff,
+    if not is_admin:
+        last = (
+            db.query(AttendanceModel.timestamp)
+            .filter(func.lower(AttendanceModel.usn) == key)
+            .first()
         )
-        .scalar()
-    )
+        if last is not None:
+            age = now - last.timestamp
+            if age < timedelta(minutes=settings.SCRAPE_COOLDOWN_MINUTES):
+                remaining = max(
+                    1,
+                    int(
+                        (
+                            timedelta(minutes=settings.SCRAPE_COOLDOWN_MINUTES) - age
+                        ).total_seconds()
+                    ),
+                )
+                raise HTTPException(
+                    status_code=429,
+                    detail="recently_scraped",
+                    headers={"Retry-After": str(remaining)},
+                )
 
-    if used >= settings.DAILY_SCRAPE_LIMIT:
-        oldest = (
-            db.query(func.min(AttendanceHistory.recorded_at))
+        used = (
+            db.query(func.count(AttendanceHistory.id))
             .filter(
                 func.lower(AttendanceHistory.usn) == key,
                 AttendanceHistory.recorded_at > cutoff,
             )
             .scalar()
         )
-        seconds = max(
-            0,
-            int(
-                (
-                    oldest + timedelta(hours=settings.DAILY_SCRAPE_WINDOW_HOURS) - now
-                ).total_seconds()
-            ),
-        )
-        raise HTTPException(
-            status_code=429,
-            detail=f"Daily fetch limit reached ({settings.DAILY_SCRAPE_LIMIT} per day). Try again later.",
-            headers={"Retry-After": str(seconds)},
-        )
+
+        if used >= settings.DAILY_SCRAPE_LIMIT:
+            oldest = (
+                db.query(func.min(AttendanceHistory.recorded_at))
+                .filter(
+                    func.lower(AttendanceHistory.usn) == key,
+                    AttendanceHistory.recorded_at > cutoff,
+                )
+                .scalar()
+            )
+            seconds = max(
+                0,
+                int(
+                    (
+                        oldest
+                        + timedelta(hours=settings.DAILY_SCRAPE_WINDOW_HOURS)
+                        - now
+                    ).total_seconds()
+                ),
+            )
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily fetch limit reached ({settings.DAILY_SCRAPE_LIMIT} per day). Try again later.",
+                headers={"Retry-After": str(seconds)},
+            )
 
     # Failure budget: rejected logins for this USN in a sliding window.
     fail_cutoff = now - timedelta(minutes=settings.FAILURE_WINDOW_MINUTES)

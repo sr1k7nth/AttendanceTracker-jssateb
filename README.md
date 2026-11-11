@@ -22,22 +22,25 @@ This is painful on mobile, slow on bad networks, and impossible to integrate wit
 - **Landing page** — tagline and Login button; returning users skip straight to the form
 - **Fast attendance check** — cached data loads instantly from localStorage
 - **Weekly timetable** — the week's period grid (present / absent / upcoming), straight from the portal
+- **Weekly history** — past weeks are stored and browsable with ‹ › arrows; the first scrape backfills the previous four weeks, then each new week's first scrape captures the finished one
 - **Subject-wise table** — code, name, classes, present, percentage for each subject
-- **Stats grid** — overall %, can miss at 85%/75%, must attend at 85%/75%
+- **Stats grid** — overall %, dynamic "can miss" and "need to attend" values (only the live thresholds are shown — structurally-zero values are hidden)
+- **Attendance over time** — collapsible line chart with one point per login, gradient area fill, 75/85 guide lines
 - **Custom calculator** — enter any target % to see how many classes you can miss
+- **Miss calculator** — "what if I miss X classes?" shows the resulting %, globally and per subject
 - **Absent periods** — shows which classes you missed and when
-- **Unlimited refreshes** — no daily quota, no waiting between refreshes
-- **Leaderboard** — opt-in, shows alias (not USN), attendance %, branch, rank
+- **Leaderboard** — opt-in, alias only (never USN), shows the most recent 3-day window sorted highest/lowest, 20 per page
 - **Supporters wall** — month-wise cards of everyone who backed the project
-- **Donate page** — UPI QR + proof-of-payment upload form
+- **Donate page** — UPI QR + proof-of-payment upload (client-side resize, 5 MB cap)
+- **Donation review notices** — donors see a banner when their proof is approved or rejected (with the reason)
+- **In-app feedback** — five types (Feedback / Error / Feature request / Data removal / Beta screenshot) with screenshot uploads where they matter; Error and Data removal require one, Data removal auto-stamps your last scrape time as identity proof; capped at 3 submissions per user per day; the admin reviews and replies in the panel — replies show up as a banner on your summary page
+- **Branch beta-check banner** — post-login, dismissible amber banner asking users to test the site and submit a beta screenshot (USN + branch attached), because the admin has no credentials for other branches; it auto-retires for a branch after 3 beta screenshots, and dismissal remembers per branch
 - **Donation progress** — monthly ₹500 goal bar with lifetime totals
 - **Support nudge** — popup on app opens 1, 3, 6, 9, 12… (at most once a day, never for supporters)
 - **Changelog** — what shipped and when
-- **Admin panel** — donation review queue (approve / reject proofs) behind a separate panel credential
-- **Nav menu** — FAQ, Terms and Changelog tucked behind a ☰ button
-- **Beta banner** — always-visible feedback link for bugs and feature requests
-- **Terms & Conditions** — full ToC page with login checkbox
-- **Dark/light theme** — persisted in localStorage
+- **Admin panel** — pending queue + approved/rejected history tabs behind a separate panel credential; screenshots are auto-deleted once a donation is reviewed
+- **Nav menu** — FAQ, Terms, Changelog and GitHub tucked behind a ☰ button; Donate as a green navbar entry
+- **Dark/light theme** — zinc monochrome + green brand accent, persisted in localStorage
 - **Mobile-friendly** — responsive design, works on any device
 
 ## Tech Stack
@@ -74,11 +77,11 @@ Attendance-Tracker/
 │   │   ├── config.py           # Environment settings
 │   │   ├── oauth.py            # JWT creation + validation
 │   │   └── routes/
-│   │       ├── scrape.py       # /scraper/login
-│   │       ├── fetch_attendance.py  # /fetch_attendance
+│   │       ├── scrape.py       # /scraper/login (cooldown, daily cap, admin bypass)
+│   │       ├── fetch_attendance.py  # /fetch_attendance + /fetch_attendance/history
 │   │       ├── leaderboard.py  # /leaderboard
-│   │       ├── donations.py    # /supporters + /supporters/progress + /donations
-│   │       └── admin.py        # /admin/donations/* (review queue)
+│   │       ├── donations.py    # /supporters + /supporters/progress + /donations + /donations/mine
+│   │       └── admin.py        # /admin/donations/* (review queue + history) + /admin/latest
 │   ├── alembic/                # Database migrations
 │   ├── portal_client.py        # Portal scraper (plain HTTP) + parsers
 │   ├── .env.example            # Template for environment settings
@@ -116,16 +119,26 @@ Attendance-Tracker/
 
 | Method | Endpoint | Auth | Rate Limit | Description |
 |--------|----------|------|------------|-------------|
-| POST | `/scraper/login` | No | None | Scrape portal → cache → return JWT |
-| GET | `/fetch_attendance/` | JWT | None | Cached attendance (incl. timetable) from DB |
-| GET | `/leaderboard` | JWT | None | Ranked opted-in users |
+| POST | `/scraper/login` | No | Cooldown + daily cap (bypassed for `ADMIN_USN`) | Scrape portal → cache → return JWT |
+| GET | `/fetch_attendance/` | JWT | None | Cached attendance + `weeks[]` (stored weekly grids, newest first) |
+| GET | `/fetch_attendance/history` | JWT | None | Attendance % checkpoints (one per login) |
+| GET | `/leaderboard` | JWT | None | Ranked opted-in users (same semester) |
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
 | GET | `/supporters/progress` | No | None | Donation progress (month + lifetime totals) |
 | POST | `/donations` | JWT | 5 MB max | Submit proof of payment → pending review |
+| POST | `/feedback` | JWT | 3 per user/day | Feedback, Error (screenshot required), Feature request, Data removal (dashboard screenshot required), Beta screenshot (branch + screenshot required) |
+| GET | `/feedback/mine` | JWT | None | Your submissions incl. admin replies |
+| GET | `/feedback/beta-status` | JWT | None | Your branch's beta-screenshot count (drives the banner) |
+| GET | `/feedback/branches` | JWT | None | Distinct known branches |
+| GET | `/donations/mine` | JWT | None | The donor's own submissions (status + reject reason) |
 | GET | `/admin/donations/pending` | JWT + panel cred | None | Donation proofs awaiting review |
-| GET | `/admin/donations/{id}/screenshot` | JWT + panel cred | — | Original payment screenshot |
-| POST | `/admin/donations/{id}/approve` | JWT + panel cred | None | Approve → supporter perks apply |
-| POST | `/admin/donations/{id}/reject` | JWT + panel cred | None | Reject the proof |
+| GET | `/admin/donations/reviewed?status=` | JWT + panel cred | None | Approved/rejected history (metadata only) |
+| GET | `/admin/donations/{id}/screenshot` | JWT + panel cred | — | Payment screenshot (404 after review) |
+| POST | `/admin/donations/{id}/approve` | JWT + panel cred | None | Approve → supporter perks apply → screenshot deleted |
+| POST | `/admin/donations/{id}/reject` | JWT + panel cred | None | Reject with reason → donor sees it → screenshot deleted |
+| GET | `/admin/latest` | JWT + panel cred | None | Latest sign-ins table |
+| GET | `/admin/feedback` | JWT + panel cred | None | Feedback submissions inbox |
+| GET | `/admin/feedback/{id}/screenshot` | JWT + panel cred | — | Attached feedback screenshot |
 | GET | `/` | No | None | Health check |
 
 ## Security Model
@@ -134,14 +147,21 @@ Attendance-Tracker/
 2. **JWT-based auth** — 7-day tokens, no server-side sessions
 3. **Leaderboard privacy** — leaderboard shows alias, attendance %, branch, rank. Portal IDs and detailed records are never shared.
 4. **Only attendance data is scraped** — no fees, no personal info
-5. **Payment proofs stay private** — donation screenshots live outside the web root and are never served statically. On the public wall only the approved name/message appears; the optional private note is never published.
+5. **Payment proofs stay private — and don't linger** — donation screenshots live outside the web root, are never served statically, and are **deleted the moment a donation is reviewed** (approved or rejected). Only the review row remains, as an audit record. On the public wall only the approved name/message appears; the optional private note is never published.
 6. **Open source** — full codebase on GitHub
 7. **Terms & Conditions** — users must accept before using the service
 
 ## Rate Limiting
 
-**There are none.** No daily quota, no 2-hour TTL, no 429 — every login
-performs a real scrape and returns fresh data.
+Every login performs a real scrape, throttled three ways (all sliding windows):
+
+| Guard | Default | Response |
+|-------|---------|----------|
+| Cooldown between scrapes of the same USN | 5 min | 429 `recently_scraped` + `Retry-After` (frontend serves cached data) |
+| Scrapes per USN per sliding day | 20 | 429 with the window's reset time |
+| Failed logins per USN per window | 5 / 15 min | 429 (cleared on the next successful login) |
+
+The `ADMIN_USN` account bypasses the cooldown and daily cap (never the failure budget — wrong passwords still count).
 
 ## Scraping
 
@@ -210,11 +230,15 @@ docker run -p 8000:8000 --env-file .env --network host attendance-backend
 | `CORS_ORIGINS` | Comma-separated allowed origins |
 | `DONATION_GOAL` | Monthly donation goal in ₹ (default `500`) |
 | `DONATIONS_UPLOAD_DIR` | Payment screenshot storage (default `backend/uploads/donations`) |
+| `FEEDBACK_UPLOAD_DIR` | Feedback screenshot storage (default `backend/uploads/feedback`) |
 | `SCRAPE_COOLDOWN_MINUTES` | Minutes between two scrapes of the same USN (default `5`) |
 | `DAILY_SCRAPE_LIMIT` | Scrapes allowed per USN per sliding day (default `20`) |
 | `DAILY_SCRAPE_WINDOW_HOURS` | Sliding window for the daily scrape cap (default `24`) |
 | `FAILURE_LIMIT` | Failed logins allowed per USN per window (default `5`) |
 | `FAILURE_WINDOW_MINUTES` | Sliding window for the failure budget (default `15`) |
+| `ADMIN_PANEL_USERNAME` | Admin panel username (login-form gate; empty = admin routes 503) |
+| `ADMIN_PANEL_PASSWORD` | Admin panel password |
+| `ADMIN_USN` | Portal USN the admin token carries; bypasses cooldown + daily cap |
 
 See `backend/.env.example` for a ready-to-copy template.
 

@@ -1,5 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { adminApprove, adminListPending, adminReject, fetchAdminScreenshot } from '../api';
+import {
+  adminApprove,
+  adminListFeedback,
+  adminListPending,
+  adminListReviewed,
+  adminReject,
+  adminReplyFeedback,
+  fetchAdminFeedbackScreenshot,
+  fetchAdminScreenshot,
+} from '../api';
+
+const TABS = [
+  ['pending', 'Pending'],
+  ['approved', 'Approved'],
+  ['rejected', 'Rejected'],
+  ['feedback', 'Feedback'],
+];
 
 // Hidden review queue — reachable only during a panel-credential session
 // (the panel username/password typed on the ordinary login page; App gates
@@ -9,7 +25,10 @@ export default function AdminPanel({ onLock }) {
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [creds, setCreds] = useState(null); // { user, pass } once unlocked
+  const [tab, setTab] = useState('pending');
   const [pending, setPending] = useState([]);
+  const [reviewed, setReviewed] = useState({ approved: null, rejected: null });
+  const [feedbackRows, setFeedbackRows] = useState(null);
   const [amounts, setAmounts] = useState({}); // id -> editable amount string
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -50,6 +69,50 @@ export default function AdminPanel({ onLock }) {
     }
   }, []);
 
+  const loadReviewed = useCallback(async (c, status, force = false) => {
+    setReviewed((r) => ({ ...r, [status]: force ? null : r[status] ?? null }));
+    setLoading(true);
+    setError('');
+    try {
+      const rows = await adminListReviewed(status, c.user, c.pass);
+      setReviewed((r) => ({ ...r, [status]: rows }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadFeedback = useCallback(async (c, force = false) => {
+    setFeedbackRows((r) => (force ? null : r ?? null));
+    setLoading(true);
+    setError('');
+    try {
+      const rows = await adminListFeedback(c.user, c.pass);
+      setFeedbackRows(rows);
+      // thumbnails for submissions that carry a screenshot
+      const urls = {};
+      await Promise.all(
+        rows
+          .filter((r) => r.screenshot_url)
+          .map(async (r) => {
+            try {
+              urls[r.id] = URL.createObjectURL(
+                await fetchAdminFeedbackScreenshot(r.id, c.user, c.pass)
+              );
+            } catch {
+              // preview optional
+            }
+          })
+      );
+      replaceShots(urls);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Pre-unlock from the panel session created at the login page; the form
   // below stays as a fallback if no session was carried over.
   useEffect(() => {
@@ -76,17 +139,39 @@ export default function AdminPanel({ onLock }) {
     if (ok) setCreds(c);
   }
 
+  function switchTab(next) {
+    setTab(next);
+    if (next === 'feedback') {
+      if (creds && feedbackRows === null) loadFeedback(creds);
+    } else if (next !== 'pending' && creds && reviewed[next] === null) {
+      loadReviewed(creds, next);
+    }
+  }
+
   async function act(fn, id, ...args) {
     setBusyId(id);
     setError('');
     try {
       await fn(id, ...args, creds.user, creds.pass);
       await load(creds);
+      // the reviewed lists just changed — drop their caches
+      setReviewed({ approved: null, rejected: null });
+      if (tab === 'feedback') loadFeedback(creds, true);
+      else if (tab !== 'pending') loadReviewed(creds, tab, true);
     } catch (err) {
       setError(err.message);
     } finally {
       setBusyId(null);
     }
+  }
+
+  function rejectWithReason(row) {
+    const reason = window.prompt(
+      'Reason for rejection (shown to the donor on their summary page):',
+      ''
+    );
+    if (reason === null) return; // cancelled
+    act((id, r, u, p) => adminReject(id, u, p, r), row.id, reason.trim());
   }
 
   if (!creds) {
@@ -126,16 +211,182 @@ export default function AdminPanel({ onLock }) {
     );
   }
 
+  const rows = tab === 'pending' ? pending : reviewed[tab] || [];
+
   return (
     <div className="admin-page">
       <div className="admin-head">
-        <h2>Pending proofs</h2>
-        <button className="btn" onClick={() => load(creds)} disabled={loading}>
+        <h2>{tab === 'feedback' ? 'Feedback' : 'Donations'}</h2>
+        <button
+          className="btn"
+          onClick={() =>
+            tab === 'pending'
+              ? load(creds)
+              : tab === 'feedback'
+                ? loadFeedback(creds, true)
+                : loadReviewed(creds, tab, true)
+          }
+          disabled={loading}
+        >
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
+
+      <div className="admin-tabs">
+        {TABS.map(([key, label]) => (
+          <button
+            key={key}
+            className={tab === key ? 'active' : ''}
+            onClick={() => switchTab(key)}
+          >
+            {label}
+            {key === 'pending' && pending.length > 0 && (
+              <span className="admin-tab-count">{pending.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {error && <p className="form-error">{error}</p>}
-      {loading && !pending.length ? (
+
+      {tab === 'feedback' ? (
+        loading && !feedbackRows?.length ? (
+          <p className="loading">Loading...</p>
+        ) : !feedbackRows?.length ? (
+          <div className="empty-state">
+            <p>No feedback yet.</p>
+          </div>
+        ) : (
+          <ul className="admin-list">
+            {feedbackRows.map((row) => (
+              <li key={row.id} className="admin-item">
+                {shotsRef.current[row.id] && (
+                  <div className="admin-shot">
+                    <img
+                      src={shotsRef.current[row.id]}
+                      alt="Feedback attachment"
+                      className="admin-thumb"
+                    />
+                    <a
+                      href={shotsRef.current[row.id]}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="admin-fullview"
+                    >
+                      Full size
+                    </a>
+                  </div>
+                )}
+                <div className="admin-info">
+                  <div className="admin-meta">
+                    <span className={`feedback-cat feedback-cat-${row.category}`}>
+                      {row.category === 'data_removal'
+                        ? 'Data removal'
+                        : row.category === 'feature'
+                          ? 'Feature request'
+                          : row.category.charAt(0).toUpperCase() + row.category.slice(1)}
+                    </span>
+                    <span>{row.usn}</span>
+                    <span>
+                      {new Date(row.created_at).toLocaleString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </span>
+                  </div>
+                  {row.message && <p className="admin-msg">{row.message}</p>}
+                  {row.reply && (
+                    <p className="admin-note admin-reply-given">
+                      Replied: {row.reply}
+                    </p>
+                  )}
+                  {row.last_scraped_at && (
+                    <p className="admin-note">
+                      Last scrape (proof):{' '}
+                      {new Date(row.last_scraped_at).toLocaleString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}{' '}
+                      IST
+                    </p>
+                  )}
+                  <div className="admin-actions">
+                    <button
+                      className="admin-approve"
+                      disabled={busyId === row.id}
+                      onClick={() => {
+                        const reply = window.prompt(
+                          row.reply
+                            ? 'Edit your reply (empty clears it):'
+                            : 'Reply to this submission (shown to the user on their summary page):',
+                          row.reply || ''
+                        );
+                        if (reply === null) return; // cancelled
+                        act(
+                          (id, r, u, p) => adminReplyFeedback(id, r, u, p),
+                          row.id,
+                          reply.trim()
+                        );
+                      }}
+                    >
+                      {busyId === row.id ? '...' : row.reply ? 'Edit reply' : 'Reply'}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : tab !== 'pending' ? (
+        loading && !rows.length ? (
+          <p className="loading">Loading...</p>
+        ) : !rows.length ? (
+          <div className="empty-state">
+            <p>Nothing {tab} yet.</p>
+          </div>
+        ) : (
+          <ul className="admin-list">
+            {rows.map((row) => (
+              <li key={row.id} className="admin-item">
+                <div className="admin-info">
+                  <div className="admin-meta">
+                    <strong>
+                      {row.name}
+                      {row.anonymous ? ' (anon)' : ''}
+                    </strong>
+                    <span>{row.usn}</span>
+                    <span className="admin-amt-static">₹{row.amount}</span>
+                    <span>
+                      reviewed{' '}
+                      {new Date(
+                        row.reviewed_at || row.created_at
+                      ).toLocaleString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </span>
+                  </div>
+                  {row.reject_reason && (
+                    <p className="admin-note">Reason: {row.reject_reason}</p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : loading && !pending.length ? (
         <p className="loading">Loading...</p>
       ) : !pending.length ? (
         <div className="empty-state">
@@ -221,8 +472,7 @@ export default function AdminPanel({ onLock }) {
                     className="admin-reject"
                     disabled={busyId === row.id}
                     onClick={() => {
-                      if (!window.confirm('Reject this donation proof?')) return;
-                      act((id, u, p) => adminReject(id, u, p), row.id);
+                      rejectWithReason(row);
                     }}
                   >
                     Reject
@@ -241,6 +491,8 @@ export default function AdminPanel({ onLock }) {
           setCreds(null);
           setPass('');
           setPending([]);
+          setReviewed({ approved: null, rejected: null });
+          setTab('pending');
           replaceShots({});
           if (onLock) onLock();
         }}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchLeaderboard } from '../api';
 import SupporterBadge from './SupporterBadge';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 export default function Leaderboard({ myBranch }) {
   const [users, setUsers] = useState([]);
@@ -23,18 +23,19 @@ export default function Leaderboard({ myBranch }) {
           new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(
             new Date(ts)
           );
-        // Users cluster into fixed 3-day windows (days since the epoch split
-        // by 3, so every IST date maps to the same bucket for everyone).
+        // Fixed 3-day windows (days since the epoch split by 3, so every IST
+        // date maps to the same bucket for everyone). Only the most recent
+        // window is shown — anyone whose last check-in is older drops off
+        // the board entirely until they re-log in.
         const bucketKey = (ts) =>
           Math.floor(Date.parse(`${dayKey(ts)}T00:00:00Z`) / 86400000 / 3);
-        const ordered = [...data].sort((a, b) => {
-          // 1. newest 3-day bucket first
-          const bucketDiff = bucketKey(b.timestamp) - bucketKey(a.timestamp);
-          if (bucketDiff !== 0) return bucketDiff;
-          // 2. attendance inside the bucket (Highest/Lowest select)
+        const newestBucket = Math.max(...data.map((u) => bucketKey(u.timestamp)));
+        const recent = data.filter((u) => bucketKey(u.timestamp) === newestBucket);
+        const ordered = [...recent].sort((a, b) => {
+          // attendance inside the recent window (Highest/Lowest select)
           const avgDiff = (a.total_avg - b.total_avg) * avgDir;
           if (avgDiff !== 0) return avgDiff;
-          // 3. tiebreak: the more recent refresh wins
+          // tiebreak: the more recent refresh wins
           return dayKey(b.timestamp).localeCompare(dayKey(a.timestamp));
         });
         setUsers(ordered.map((u, i) => ({ ...u, rank: i + 1 })));

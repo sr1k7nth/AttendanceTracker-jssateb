@@ -25,6 +25,9 @@ class Settings(BaseSettings):
 
     # --- donations / supporters ------------------------------------------
     DONATION_GOAL: int = 500
+    # --- feedback ----------------------------------------------------------
+    # Screenshot storage for feedback/error reports (default: backend/uploads/feedback)
+    FEEDBACK_UPLOAD_DIR: str = ""
     # Admin panel HTTP Basic credentials. Left empty = admin routes answer
     # 503 "not configured" instead of letting anyone in (safe deploy default).
     ADMIN_PANEL_USERNAME: str = ""

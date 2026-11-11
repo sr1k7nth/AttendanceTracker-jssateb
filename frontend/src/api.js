@@ -144,6 +144,26 @@ export async function submitDonation(formData) {
   return request('/donations', { method: 'POST', body: formData });
 }
 
+export async function submitFeedback(formData) {
+  return request('/feedback', { method: 'POST', body: formData });
+}
+
+export async function fetchMyFeedback() {
+  return request('/feedback/mine');
+}
+
+export async function fetchBetaStatus() {
+  return request('/feedback/beta-status');
+}
+
+export async function fetchBranches() {
+  return request('/feedback/branches');
+}
+
+export async function fetchMyDonations() {
+  return request('/donations/mine');
+}
+
 // --- admin panel — JWT + X-Admin-Auth (base64 panel user:pass) per call -----
 
 function panelHeaders(user, pass) {
@@ -152,6 +172,24 @@ function panelHeaders(user, pass) {
 
 export async function adminListPending(user, pass) {
   return request('/admin/donations/pending', { headers: panelHeaders(user, pass) });
+}
+
+export async function adminListReviewed(status, user, pass) {
+  return request(`/admin/donations/reviewed?status=${status}`, {
+    headers: panelHeaders(user, pass),
+  });
+}
+
+export async function adminListFeedback(user, pass) {
+  return request('/admin/feedback', { headers: panelHeaders(user, pass) });
+}
+
+export async function adminReplyFeedback(id, reply, user, pass) {
+  return request(`/admin/feedback/${id}/reply`, {
+    method: 'POST',
+    headers: panelHeaders(user, pass),
+    body: JSON.stringify({ reply }),
+  });
 }
 
 export async function adminListLatest(user, pass) {
@@ -166,17 +204,34 @@ export async function adminApprove(id, amount, user, pass) {
   });
 }
 
-export async function adminReject(id, user, pass) {
+export async function adminReject(id, user, pass, reason) {
   return request(`/admin/donations/${id}/reject`, {
     method: 'POST',
     headers: panelHeaders(user, pass),
-    body: JSON.stringify({}),
+    body: JSON.stringify(reason ? { reason } : {}),
   });
 }
 
 export async function fetchAdminScreenshot(id, user, pass) {
   const token = localStorage.getItem('token');
   const res = await fetch(`${BASE_URL}/admin/donations/${id}/screenshot`, {
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...panelHeaders(user, pass),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Request failed' }));
+    const error = new Error(err.detail || `HTTP ${res.status}`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.blob();
+}
+
+export async function fetchAdminFeedbackScreenshot(id, user, pass) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${BASE_URL}/admin/feedback/${id}/screenshot`, {
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
       ...panelHeaders(user, pass),

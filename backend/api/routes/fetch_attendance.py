@@ -4,7 +4,8 @@ from ..oauth import get_current_user
 from ..database import get_db
 from ..models import Attendance as AttendanceModel
 from ..models import AttendanceHistory
-from ..schemas import AttendanceResponse, HistoryPointOut
+from ..models import WeeklyTimetable
+from ..schemas import AttendanceResponse, HistoryPointOut, WeekOut
 
 router = APIRouter(prefix="/fetch_attendance", tags=["Fetch Attendance"])
 
@@ -23,7 +24,20 @@ def get_attendance(
     if user is None:
         raise HTTPException(status_code=401, detail="Register/Login first")
 
-    return user
+    resp = AttendanceResponse.model_validate(user)
+    # Stored weekly grids — newest first. The current week is in here too
+    # (it upserts on every scrape), so the UI can flip between weeks.
+    week_rows = (
+        db.query(WeeklyTimetable)
+        .filter(WeeklyTimetable.usn == current_user)
+        .order_by(WeeklyTimetable.week_start.desc())
+        .all()
+    )
+    resp.weeks = [
+        WeekOut(week_start=row.week_start, timetable=row.timetable)
+        for row in week_rows
+    ]
+    return resp
 
 
 @router.get("/history", response_model=list[HistoryPointOut])

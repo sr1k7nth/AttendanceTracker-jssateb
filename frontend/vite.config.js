@@ -12,6 +12,7 @@ export default defineConfig({
       '/leaderboard': API_URL,
       '/supporters': API_URL,
       '/donations': API_URL,
+      '/feedback': API_URL,
       '/admin': API_URL,
     },
   },

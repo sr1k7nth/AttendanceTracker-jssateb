@@ -1,38 +1,87 @@
 /* ========================================
    Attendance Summary — Global Styles
-   Cool monochrome dark / light, slate blue accent
+   shadcn zinc + single green brand (anishshobithps.com system)
    ======================================== */
 
 :root {
-  /* Dark Mode (default) — cool monochrome + slate blue */
-  --bg: #0e0e0e;
-  --bg-surface: #171717;
-  --bg-hover: #1f1f1f;
-  --border: #2c2c2c;
-  --text: #c5c5c0;
-  --text-bright: #f0f0ec;
-  --text-dim: #8a8a85;
-  --green: #8ab860;
-  --red: #e06050;
-  --yellow: #d8b050;
-  --blue: #6e84a8;
+  /* Dark Mode — zinc-950 base, hairline borders, green brand */
+  --bg: #09090b;
+  --bg-surface: #18181b;
+  --bg-hover: #27272a;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.22);
+  --border-grid: rgba(255, 255, 255, 0.34);
+  --text: #d4d4d8;
+  --text-bright: #fafafa;
+  --text-dim: #a1a1aa;
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --accent: #4ade80;
+  --accent-soft: rgba(74, 222, 128, 0.12);
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+
+  --radius-btn: 8px;
+  --radius-panel: 14px;
+  --selection-bg: #4ade80;
+  --selection-fg: #052e16;
+  --tap-highlight: rgba(74, 222, 128, 0.2);
 }
 
 [data-theme="light"] {
-  --bg: #f4f4f2;
-  --bg-surface: #eaeae7;
-  --bg-hover: #e0e0dc;
-  --border: #d0d0cb;
-  --text: #3a3a36;
-  --text-bright: #1a1a18;
-  --text-dim: #7a7a74;
-  --green: #8ab860;
-  --red: #d03020;
-  --yellow: #907018;
-  --blue: #4a6fa5;
+  --bg: #ffffff;
+  --bg-surface: #fafafa;
+  --bg-hover: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #b8b8c0;
+  --border-grid: #9a9aa4;
+  --text: #3f3f46;
+  --text-bright: #09090b;
+  --text-dim: #71717a;
+  --green: #16a34a;
+  --red: #dc2626;
+  --yellow: #ca8a04;
+  --blue: #2563eb;
+  --accent: #16a34a;
+  --accent-soft: rgba(22, 163, 74, 0.08);
+
+  --selection-bg: #86efac;
+  --selection-fg: #052e16;
+  --tap-highlight: rgba(22, 163, 74, 0.14);
+}
+
+::selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-fg);
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: var(--radius-btn);
+  border: 3px solid var(--bg);
+}
+
+[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-color: #ffffff;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+* {
+  -webkit-tap-highlight-color: var(--tap-highlight);
 }
 
 /* ========================================
@@ -178,7 +227,7 @@
   padding: 0.75rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
 }
 
 .spinner {
@@ -264,11 +313,14 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: var(--bg);
-  color: var(--text);
+  font-size: 1rem;
+  background:
+    radial-gradient(1100px 480px at 50% -12%, rgba(74, 222, 128, 0.06), transparent 60%),
+    var(--bg);
+  color: var(--text-bright);
   line-height: 1.6;
-  min-height: 100vh;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -363,8 +415,8 @@ a:hover {
 }
 
 .nav-back:hover {
-  border-color: var(--blue);
-  background: var(--bg-hover);
+  border-color: var(--green);
+  background: var(--accent-soft);
 }
 
 .header-bottom {
@@ -375,9 +427,10 @@ a:hover {
 }
 
 .header h1 {
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-bright);
+  color: var(--green);
   letter-spacing: -0.02em;
 }
 
@@ -406,7 +459,7 @@ a:hover {
   font-size: 0.85rem;
   padding: 0.35rem 0.75rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   transition: color 0.2s, background 0.2s;
 }
 
@@ -418,6 +471,29 @@ a:hover {
 .header-nav button.active {
   color: var(--text-bright);
   background: var(--bg-hover);
+}
+
+/* Donate nav entry — green brand text (when it's a link) or a green
+   plate (button form) so the CTA reads as the primary action */
+.nav-donate {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.nav-donate:hover {
+  color: var(--green);
+  background: var(--accent-soft);
+  filter: brightness(1.1);
+}
+
+.nav-donate.active {
+  color: var(--green);
+  background: var(--accent-soft);
+}
+
+.nav-donate:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
 }
 
 .nav-menu {
@@ -435,7 +511,7 @@ a:hover {
   line-height: 1;
   padding: 0.3rem 0.55rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
 
@@ -455,30 +531,51 @@ a:hover {
   min-width: 140px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-btn);
   padding: 0.25rem;
   z-index: 20;
   display: flex;
   flex-direction: column;
 }
 
-.nav-menu-dropdown button {
+.nav-menu-dropdown button,
+.nav-menu-dropdown .nav-menu-link {
   background: none;
   border: none;
   color: var(--text-dim);
   font: inherit;
   font-size: 0.85rem;
   text-align: left;
+  text-decoration: none;
   padding: 0.45rem 0.75rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   transition: color 0.2s, background 0.2s;
+  display: block;
 }
 
 .nav-menu-dropdown button:hover,
+.nav-menu-dropdown .nav-menu-link:hover,
 .nav-menu-dropdown button.active {
   color: var(--text-bright);
   background: var(--bg-hover);
+}
+
+.nav-menu-dropdown .nav-menu-link {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.nav-menu-dropdown .nav-menu-link:hover {
+  color: var(--green);
+  filter: brightness(1.12);
+}
+
+.nav-menu-dropdown .nav-menu-link::after {
+  content: " ↗";
+  font-size: 0.72rem;
+  color: var(--green);
+  margin-left: 0.1em;
 }
 
 /* ========================================
@@ -493,7 +590,7 @@ a:hover {
   font-size: 0.8rem;
   padding: 0.3rem 0.6rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   transition: color 0.2s, border-color 0.2s;
 }
 
@@ -526,10 +623,9 @@ a:hover {
 
 .login-form .login-tagline,
 .landing .login-tagline {
-  font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(1.85rem, 6.5vw, 2.6rem);
-  font-style: italic;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-bright);
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -551,7 +647,7 @@ a:hover {
 }
 
 .brand-accent {
-  color: #6e84a8;
+  color: var(--green);
 }
 
 .landing-login {
@@ -589,7 +685,7 @@ a:hover {
   padding: 0.65rem 0.75rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   color: var(--text-bright);
   font: inherit;
   font-size: 0.95rem;
@@ -600,6 +696,7 @@ a:hover {
 .form-group input:focus {
   outline: none;
   border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .form-group input::placeholder {
@@ -632,7 +729,7 @@ a:hover {
   justify-content: center;
   padding: 0.6rem 1.25rem;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   background: var(--bg-surface);
   color: var(--text-bright);
   font: inherit;
@@ -656,23 +753,36 @@ a:hover {
   cursor: not-allowed;
 }
 
-/* Every button's text goes white on hover — except the donate CTAs,
-   which keep dark text on their green plate (.btn-shine). Light theme
-   keeps its existing hover colors (white-on-light would vanish). */
-[data-theme="dark"] .app button:not(.btn-shine):hover {
+/* Every button's text goes white on hover — except the green plates
+   (.btn-shine, .stat-refresh), which keep dark text. Light theme keeps
+   its existing hover colors (white-on-light would vanish). */
+[data-theme="dark"] .app button:not(.btn-shine):not(.stat-refresh):not(.calc-btn):not(.btn-primary):hover {
   color: #fff;
 }
 
 .btn-primary {
-  background: var(--green);
-  border-color: var(--green);
-  color: #1e1a14;
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-bright);
   font-weight: 600;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
-  border-color: var(--green);
+  background: #fafafa;
+  border-color: #fafafa;
+  color: #18181b;
+}
+
+[data-theme="light"] .btn-primary {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-bright);
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background: #18181b;
+  border-color: #18181b;
+  color: #fafafa;
 }
 
 .error-msg {
@@ -775,7 +885,7 @@ a:hover {
   font: inherit;
   font-size: 0.96rem;
   padding: 0.4rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
@@ -821,6 +931,16 @@ a:hover {
   color: var(--text-bright);
 }
 
+/* GitHub in the footer — green, like the menu entry */
+.footer-links .footer-github {
+  color: var(--green);
+}
+
+.footer-links .footer-github:hover {
+  color: var(--green);
+  filter: brightness(1.12);
+}
+
 .footer-sep {
   color: var(--text-dim);
   font-size: 0.825rem;
@@ -856,31 +976,156 @@ a:hover {
   margin-bottom: 2rem;
 }
 
+/* --- permanent announcement banner (updates + feedback route) --- */
+.site-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, var(--accent-soft), transparent 65%);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-panel);
+  font-size: 0.85rem;
+  color: var(--text);
+  animation: expand-in 0.25s ease;
+}
+
+.site-notice strong {
+  color: var(--green);
+}
+
+.site-notice .link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.site-notice .link:hover {
+  color: var(--text-bright);
+}
+
+/* Beta-check banner: amber left border to separate it from the green
+   "What's new" announcement (both banners look near-identical otherwise) */
+.site-notice.beta-notice {
+  border-left-color: var(--yellow);
+  animation: expand-in 0.25s ease;
+}
+
+.site-notice.beta-notice strong {
+  color: var(--yellow);
+}
+
+.site-notice.beta-notice .link {
+  color: var(--yellow);
+}
+
+.site-notice.beta-notice .link:hover {
+  color: var(--text-bright);
+}
+
+.site-notice.beta-notice .donation-notice-close {
+  margin-left: auto;
+}
+
+/* --- notice banners (donation review + admin feedback reply) --- */
+.donation-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, var(--accent-soft), transparent 65%);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-panel);
+  font-size: 0.9rem;
+  color: var(--text);
+  animation: expand-in 0.25s ease;
+}
+
+.donation-notice strong {
+  color: var(--text-bright);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.donation-notice p {
+  margin: 0.2rem 0 0;
+  line-height: 1.5;
+}
+
+.donation-notice.rejected {
+  border-left-color: var(--red);
+}
+
+.donation-notice.rejected strong {
+  color: var(--red);
+}
+
+.donation-notice .reply-quoted {
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+.donation-notice-close {
+  flex-shrink: 0;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: grid;
+  place-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.donation-notice-close:hover {
+  color: var(--text-bright);
+  border-color: var(--text-dim);
+  background: var(--bg-hover);
+}
+
+@keyframes expand-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .stat-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   padding: 1rem;
 }
 
 .stat-overall {
   text-align: center;
-  padding: 1.25rem 1rem;
-  background: var(--blue);
-  border-color: var(--blue);
+  padding: 1.5rem 1rem;
+  background:
+    radial-gradient(420px 170px at 50% 0%, var(--accent-soft), transparent 72%),
+    var(--bg-surface);
+  border-color: var(--border);
+  border-radius: var(--radius-panel);
 }
 
 .stat-overall .stat-label {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-dim);
 }
 
-.stat-overall .stat-value.high,
-.stat-overall .stat-value.mid,
-.stat-overall .stat-value.low {
-  color: #f0f0ec;
-}
-
-/* Refresh sits inside the Overall box now — light outline on the blue card */
+/* Refresh sits inside the Overall card — grey at rest, green plate on
+   hover (was the inverted primary) */
 .stat-refresh {
   display: inline-block;
   margin-top: 0.8rem;
@@ -888,21 +1133,40 @@ a:hover {
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #f0f0ec;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 4px;
+  color: var(--text-bright);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-btn);
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, filter 0.2s;
 }
 
-.stat-refresh:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.22);
+.stat-refresh:hover:not(:disabled),
+.stat-refresh:focus-visible {
+  background: var(--green);
+  border-color: var(--green);
+  color: #052e16;
+  filter: brightness(1.07);
+}
+
+[data-theme="light"] .stat-refresh {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-bright);
+}
+
+[data-theme="light"] .stat-refresh:hover:not(:disabled),
+[data-theme="light"] .stat-refresh:focus-visible {
+  background: var(--green);
+  border-color: var(--green);
+  color: #052e16;
+  filter: brightness(1.05);
 }
 
 .stat-refresh:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  filter: none;
 }
 
 .stat-row {
@@ -978,7 +1242,7 @@ a:hover {
 }
 
 .custom-calc .section-title {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   margin-bottom: 0.85rem;
 }
 
@@ -999,7 +1263,7 @@ a:hover {
   width: 6.5rem;
   padding: 0.6rem 0.85rem;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-btn);
   background: var(--bg-surface);
   color: var(--text-bright);
   font: inherit;
@@ -1025,6 +1289,23 @@ a:hover {
   font-size: 0.9rem;
 }
 
+/* Calculate buttons: grey at rest (that's .btn-primary now), hover into
+   the inverted primary — grey→white with dark text */
+.btn.btn-primary.calc-btn:hover,
+.btn.btn-primary.calc-btn:focus-visible {
+  background: #fafafa;
+  border-color: #fafafa;
+  color: #18181b;
+  filter: none;
+}
+
+[data-theme="light"] .btn.btn-primary.calc-btn:hover,
+[data-theme="light"] .btn.btn-primary.calc-btn:focus-visible {
+  background: #18181b;
+  border-color: #18181b;
+  color: #fafafa;
+}
+
 .calc-result {
   font-size: 0.9rem;
   color: var(--text);
@@ -1040,13 +1321,31 @@ a:hover {
    ======================================== */
 
 .section-title {
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.18em;
   color: var(--text-dim);
   margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
+}
+
+.section-title::before,
+.section-title::after {
+  content: "";
+  flex: 1;
+  /* Taller band + doubled frequency = the divider reads clearly at a glance */
+  height: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--border-strong) 0,
+    var(--border-strong) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  );
 }
 
 .attendance-list {
@@ -1179,33 +1478,17 @@ a:hover {
 
 /* Per-subject target calculator — the toggle sits after the % column and the
    panel takes its own full-width line under the row (flex-basis: 100%). */
-.subj-toggle {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  padding: 0 0.15rem;
-  cursor: pointer;
-  color: var(--text-dim);
-  font-size: 0.8rem;
-  line-height: 1;
-  transition: color 0.2s, transform 0.2s ease;
-}
-
-.subj-toggle:hover,
-.subj-toggle:focus-visible {
-  color: var(--text-bright);
-}
-
-.subj-toggle.open {
-  transform: rotate(180deg);
-}
+/* The circle-badge look for subj-toggle is defined with .history-chevron
+   later in the file (shared language) — no layout rules here to keep */
 
 .subj-expand {
   flex-basis: 100%;
   width: 100%;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-panel);
+  border-radius: var(--radius-btn);
   padding: 0.7rem 0.8rem;
   display: flex;
   flex-direction: column;
@@ -1308,7 +1591,7 @@ a:hover {
   padding: 0.4rem 0.6rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   color: var(--text);
   font: inherit;
   font-size: 0.8rem;
@@ -1341,11 +1624,11 @@ a:hover {
 }
 
 .leaderboard-me {
-  background: rgba(255, 213, 0, 0.12);
+  background: color-mix(in oklab, var(--green) 8%, transparent);
   margin: 0 -0.5rem;
   padding: 0.6rem 0.5rem;
-  border-radius: 12px;
-  box-shadow: 0 0 0 1px rgba(255, 213, 0, 0.15);
+  border-radius: var(--radius-btn);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--green) 25%, transparent);
 }
 
 .leaderboard-rank {
@@ -1416,7 +1699,7 @@ a:hover {
   font-size: 0.8rem;
   padding: 0.35rem 0.75rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
@@ -1468,7 +1751,7 @@ a:hover {
   font-size: 0.8rem;
   cursor: pointer;
   padding: 0.35rem 0.75rem;
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   transition: color 0.2s;
 }
 
@@ -1544,6 +1827,58 @@ a:hover {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Week navigation: ‹ date › — larger, taller circular steppers with a
+   green plate so the arrows read at a glance */
+.tt-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.tt-week-nav button {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in oklab, var(--green) 55%, transparent);
+  border-radius: 10px;
+  color: var(--green);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s, opacity 0.2s,
+    filter 0.2s, transform 0.15s;
+}
+
+.tt-week-nav button:hover:not(:disabled) {
+  background: var(--green);
+  border-color: var(--green);
+  color: #052e16;
+  filter: brightness(1.07);
+}
+
+.tt-week-nav button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.tt-week-nav button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tt-week-label {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-bright);
+  min-width: 6.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .tt-table {
   width: 100%;
   min-width: 640px;
@@ -1558,7 +1893,8 @@ a:hover {
   color: var(--text-dim);
   font-weight: 600;
   padding: 0.4rem 0.35rem;
-  border-bottom: 1px solid var(--border);
+  /* hairline like the physical table — not a heavy baseline */
+  border-bottom: 1px solid var(--border-strong);
   white-space: nowrap;
   text-align: center;
 }
@@ -1569,16 +1905,19 @@ a:hover {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: var(--bg);
+  /* grey tint so the frozen column reads apart from the cells */
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-strong);
 }
 
-/* Day column — the portal's bg-primary cells, themed */
+/* Day column — grey tint, distinct from the period cells */
 .tt-day {
   position: sticky;
   left: 0;
   z-index: 1;
   background: var(--bg-surface);
   border: 1px solid var(--border);
+  border-right: 1px solid var(--border-strong);
   padding: 0.5rem 0.6rem;
   vertical-align: top;
   white-space: nowrap;
@@ -1592,18 +1931,24 @@ a:hover {
 
 .tt-day-date {
   font-size: 0.65rem;
-  font-family: var(--font-mono);
   color: var(--text-dim);
+  opacity: 0.85;
 }
 
-/* Period cells */
+/* Period cells — hairline grid like the physical table; empty slots
+   stay dashed so the structure reads without shouting */
 .tt-cell {
   border: 1px solid var(--border);
   padding: 0.4rem 0.3rem;
   text-align: center;
-  vertical-align: top;
+  vertical-align: middle;
   min-width: 4.5rem;
   height: 3.6rem;
+}
+
+.tt-empty.tt-cell {
+  border-style: dotted;
+  border-color: color-mix(in oklab, var(--text-dim) 35%, transparent);
 }
 
 .tt-course {
@@ -1659,10 +2004,8 @@ a:hover {
   background: transparent;
 }
 
-.tt-empty.tt-cell {
-  border-style: dotted;
-  border-color: var(--border);
-}
+/* Empty slots stay dashed (dotted hairline) so the table structure is
+   visible even when only a couple of slots are filled. */
 
 /* ========================================
    Support / supporters / donation popup
@@ -1699,7 +2042,7 @@ a:hover {
 
 .progress-fill {
   height: 100%;
-  background: var(--blue);
+  background: var(--green);
   border-radius: 999px;
   transition: width 0.4s ease;
 }
@@ -1727,7 +2070,7 @@ a:hover {
   position: relative;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   padding: 1.5rem;
   max-width: 420px;
   width: 100%;
@@ -1832,7 +2175,7 @@ a:hover {
   content: '>';
   position: absolute;
   left: 0;
-  color: var(--blue);
+  color: var(--green);
   font-weight: 700;
 }
 
@@ -1852,12 +2195,28 @@ a:hover {
   text-align: center;
 }
 
-/* Donate CTAs: always lit (permanent gloss) + fast bright glints that
-   never stop crossing the button */
-.btn-shine {
+/* Donate CTAs: green brand plate (beats .btn-primary's white via cascade
+   order + .btn.btn-shine specificity), permanent gloss + travelling glint */
+.btn.btn-shine {
   position: relative;
   overflow: hidden;
-  transition: color 0.2s, background 0.2s;
+  background: var(--green);
+  border-color: var(--green);
+  color: #0b0b0b;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+[data-theme="light"] .btn.btn-shine {
+  background: var(--green);
+  border-color: var(--green);
+  color: #0b0b0b;
+}
+
+.btn.btn-shine:hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: #0b0b0b;
+  filter: brightness(1.05);
 }
 
 /* permanent gloss — constant shine even between glints */
@@ -1900,10 +2259,11 @@ a:hover {
 }
 
 /* hover: hold the green plate and snap the text to true dark */
-.btn-shine:hover {
+.btn.btn-shine:hover {
   background: var(--green);
   border-color: var(--green);
   color: #0b0b0b;
+  filter: brightness(1.05);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1959,7 +2319,7 @@ a:hover {
   color: var(--text-bright);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-btn);
   padding: 0.45rem 0.6rem;
   word-break: break-all;
 }
@@ -1968,17 +2328,17 @@ a:hover {
   padding: 0.45rem 0.9rem;
   font-size: 0.82rem;
   font-weight: 600;
-  border: 1px solid var(--blue);
-  color: var(--blue);
+  border: 1px solid var(--green);
+  color: var(--green);
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-btn);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
 .copy-btn:hover {
-  background: var(--blue);
-  color: var(--bg);
+  background: var(--accent-soft);
+  color: var(--green);
 }
 
 .copy-btn.copied {
@@ -2091,8 +2451,8 @@ a:hover {
   width: 1.7rem;
   height: 1.7rem;
   border-radius: 50%;
-  background: var(--blue);
-  color: #fff;
+  background: var(--accent-soft);
+  color: var(--green);
   display: grid;
   place-items: center;
   font-size: 0.78rem;
@@ -2116,12 +2476,181 @@ a:hover {
   line-height: 1.5;
 }
 
+/* --- feedback page --- */
+.feedback-types {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.feedback-type {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.feedback-type:hover {
+  color: var(--text-bright);
+  background: var(--bg-hover);
+}
+
+.feedback-type.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.feedback-message {
+  width: 100%;
+  min-height: 6rem;
+  box-sizing: border-box;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  color: var(--text-bright);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+}
+
+.feedback-message:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.feedback-proof {
+  background: linear-gradient(135deg, var(--accent-soft), transparent 65%);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-panel);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
 /* --- admin panel --- */
+.admin-page h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -0.01em;
+}
+
+/* feedback category chips */
+.feedback-cat {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  background: var(--bg);
+}
+
+.feedback-cat-feedback,
+.feedback-cat-feature {
+  color: var(--green);
+  border-color: var(--green);
+  background: var(--accent-soft);
+}
+
+.feedback-cat-error,
+.feedback-cat-data_removal {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.admin-reply-given {
+  color: var(--green);
+  border-left-color: var(--green);
+}
+
+.admin-amt-static {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.admin-thumb {
+  border-radius: var(--radius-btn);
+}
+
+.admin-fullview {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-underline-offset: 2px;
+}
+
+.admin-fullview:hover {
+  color: var(--green);
+}
+
+.admin-reject {
+  border-color: var(--red);
+  color: var(--red);
+}
 .admin-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-tabs button {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.admin-tabs button:hover {
+  color: var(--text-bright);
+}
+
+.admin-tabs button.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.admin-tab-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--yellow);
+  color: #052e16;
+  border-radius: 999px;
+  padding: 0.05em 0.5em;
+  line-height: 1.5;
 }
 
 .admin-head h2 {
@@ -2185,6 +2714,8 @@ a:hover {
 .admin-fullview {
   font-size: 0.72rem;
   color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .admin-info {
@@ -2219,10 +2750,10 @@ a:hover {
 /* private note from the donor — review queue only, never on the wall */
 .admin-note {
   font-size: 0.82rem;
-  color: var(--blue);
+  color: var(--text-dim);
   margin: 0;
   padding-left: 0.6rem;
-  border-left: 2px solid var(--blue);
+  border-left: 2px solid var(--border-strong);
 }
 
 .admin-actions {
@@ -2246,7 +2777,7 @@ a:hover {
   padding: 0.4rem 0.5rem;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-btn);
   color: var(--text-bright);
   font-size: 0.85rem;
 }
@@ -2256,21 +2787,26 @@ a:hover {
   padding: 0.45rem 1rem;
   font-size: 0.84rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: var(--radius-btn);
   cursor: pointer;
   border: 1px solid var(--border);
   background: var(--bg);
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, filter 0.2s;
 }
 
+/* green plates keep dark text, never the global white-on-hover */
 .admin-approve {
+  background: var(--green);
   border-color: var(--green);
-  color: var(--green);
+  color: #052e16;
 }
 
-.admin-approve:hover:not(:disabled) {
+.admin-approve:hover:not(:disabled),
+.admin-approve:focus-visible {
   background: var(--green);
-  color: var(--bg);
+  border-color: var(--green);
+  color: #052e16;
+  filter: brightness(1.07);
 }
 
 .admin-reject {
@@ -2278,15 +2814,30 @@ a:hover {
   color: var(--red);
 }
 
-.admin-reject:hover:not(:disabled) {
+.admin-reject:hover:not(:disabled),
+.admin-reject:focus-visible {
   background: var(--red);
-  color: var(--bg);
+  border-color: #fff;
+  color: #fff;
+  filter: brightness(1.05);
 }
 
 .admin-approve:disabled,
 .admin-reject:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* feedback reply buttons in the feedback tab share the green plate */
+.admin-approve.admin-reply {
+  background: var(--accent-soft);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.admin-approve.admin-reply:hover:not(:disabled) {
+  background: var(--green);
+  color: #052e16;
 }
 
 /* --- latest sign-ins (admin) --- */
@@ -2406,7 +2957,7 @@ a:hover {
   max-width: 240px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-btn);
   padding: 0.35rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 400;
@@ -2477,32 +3028,58 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--yellow);
-  border: 1px solid var(--yellow);
-  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
   padding: 1rem;
   font: inherit;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  /* --bg flips dark↔light with the theme, so it stays legible on yellow
-     in both modes (dark text on light-yellow, light text on dark-yellow). */
-  color: var(--bg);
+  color: var(--text-bright);
   cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
 }
 
 .history-toggle:hover {
-  filter: brightness(1.06);
+  border-color: var(--text-dim);
+  background: var(--bg-hover);
 }
 
-.history-chevron {
-  color: var(--bg);
-  opacity: 0.75;
-  transition: transform 0.2s ease;
+/* Chevrons are grey circle badges — same language as the subject-wise
+   dropdowns, so both toggles read identically (green lives on the
+   toggle's own affordance, not the arrow) */
+.history-chevron,
+.subj-toggle {
+  width: 1.8rem;
+  height: 1.8rem;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.2s, background 0.2s, border-color 0.2s, filter 0.2s;
 }
 
-.history-chevron.open {
+.history-toggle:hover .history-chevron,
+.subj-toggle:hover,
+.subj-toggle:focus-visible {
+  background: var(--bg-hover);
+  border-color: var(--text-dim);
+  color: var(--text-bright);
+  filter: brightness(1.08);
+}
+
+.history-chevron.open,
+.subj-toggle.open {
   transform: rotate(180deg);
 }
 
@@ -2510,8 +3087,21 @@ a:hover {
   margin-top: 0.75rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-btn);
   padding: 1rem;
+  /* the panel itself settles in — the graph animates within it */
+  animation: history-panel-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes history-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .history-chart {
@@ -2522,20 +3112,76 @@ a:hover {
 
 .history-line {
   fill: none;
-  stroke: var(--blue);
+  stroke: var(--green);
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
+  /* draw-on: the pathLength=1 on the element makes dash math trivial */
+  stroke-dasharray: 1;
+  animation: history-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes history-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.history-area {
+  fill: url(#history-grad);
+  /* the wash fades up behind the line as it's drawing */
+  animation: history-area-in 0.9s ease-out both;
+}
+
+@keyframes history-area-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* dots pop in with a slight stagger from the line drawing — pinned
+   stroke width so they stay hairline-tight at desktop scale */
 .history-dot {
   fill: var(--bg-surface);
-  stroke-width: 2;
+  stroke: var(--green);
+  stroke-width: 1;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: history-dot-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.history-dot.high { stroke: var(--green); }
-.history-dot.mid  { stroke: var(--yellow); }
-.history-dot.low  { stroke: var(--red); }
+@keyframes history-dot-in {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.history-dot.last {
+  fill: var(--green);
+}
+
+/* area fill under the line — soft green wash (the SVG gradient uses it) */
+.history-area {
+  fill: url(#history-grad);
+}
+
+/* keep band classes from reintroducing blue-era colors */
+.history-dot.high,
+.history-dot.mid,
+.history-dot.low {
+  stroke: var(--green);
+}
 
 .history-axis {
   fill: var(--text-dim);
@@ -2569,4 +3215,46 @@ a:hover {
   font-size: 0.7rem;
   font-style: italic;
   color: var(--text-dim);
+}
+
+/* Hatched section divider + tiny mono kicker (anishshobithps signature) */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.75rem 0 0.9rem;
+}
+
+/* Cross-fade duplicate — these late rules now win the cascade */
+.section-title::before,
+.section-title::after {
+  content: "";
+  flex: 1;
+  height: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--border-strong) 0,
+    var(--border-strong) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  );
+}
+
+.section-title,
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* green focus ring on inputs/selects */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
