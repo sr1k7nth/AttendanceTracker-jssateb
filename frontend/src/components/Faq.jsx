@@ -17,7 +17,7 @@ const faqItems = [
   },
   {
     q: 'What is the Leaderboard?',
-    a: 'A ranking of opted-in students from every branch and year. People are grouped into consecutive four-day windows by their last check-in — the latest window comes first, and older check-ins stay visible in their own groups. Inside each group, everyone is sorted by attendance percentage. You can filter by your branch or all branches, and by first to fourth year or everyone.',
+    a: 'A ranking of opted-in students from every branch and year. People are grouped into consecutive four-day windows by their last check-in — the latest window comes first, and older check-ins stay visible in their own groups. Inside each group, everyone is sorted by attendance percentage. You can filter by your branch or all branches, and by all years or only your own year.',
   },
   {
     q: 'What does Logout do?',

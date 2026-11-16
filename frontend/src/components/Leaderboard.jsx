@@ -3,6 +3,7 @@ import { fetchLeaderboard } from '../api';
 import SupporterBadge from './SupporterBadge';
 
 const PAGE_SIZE = 20;
+const YEAR_LABELS = { 1: '1st year', 2: '2nd year', 3: '3rd year', 4: '4th year' };
 
 function dayLabel(iso) {
   if (!iso) return '';
@@ -18,7 +19,7 @@ function groupLabel(bucket) {
   return 'Older check-ins';
 }
 
-export default function Leaderboard({ myBranch }) {
+export default function Leaderboard({ myBranch, mySem }) {
   const [users, setUsers] = useState([]);
   const [sort, setSort] = useState('desc');
   const [branch, setBranch] = useState('ALL');
@@ -27,13 +28,15 @@ export default function Leaderboard({ myBranch }) {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
 
+  const myYear = mySem ? Math.ceil(mySem / 2) : null;
+
   useEffect(() => {
     setLoading(true);
     setError('');
     setPage(1);
     // The API groups check-ins into four-day windows, newest first, and ranks
     // people by average attendance inside each window.
-    fetchLeaderboard(sort, branch, year === 'ALL' ? null : year)
+    fetchLeaderboard(sort, branch, year === 'ME' ? 'me' : null)
       .then(setUsers)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -82,10 +85,9 @@ export default function Leaderboard({ myBranch }) {
         </select>
         <select value={year} onChange={(e) => setYear(e.target.value)}>
           <option value="ALL">All years</option>
-          <option value="1">1st year</option>
-          <option value="2">2nd year</option>
-          <option value="3">3rd year</option>
-          <option value="4">4th year</option>
+          <option value="ME" disabled={!myYear}>
+            {myYear ? `My year (${YEAR_LABELS[myYear] || 'current'})` : 'My year'}
+          </option>
         </select>
       </div>
 

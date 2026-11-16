@@ -25,7 +25,7 @@ def leaderboard(
     usn: str = Depends(get_current_user),
     sort: str = "desc",
     branch: str = "ALL",
-    year: int | None = None,
+    year: str | None = None,
 ):
     current_user = db.query(AttendanceModel).filter(AttendanceModel.usn == usn).first()
 
@@ -35,11 +35,35 @@ def leaderboard(
             detail="User hasn't opted for leaderboard",
         )
 
-    if year is not None and year not in (1, 2, 3, 4):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="year must be between 1 and 4",
-        )
+    # A viewer may see all years, or only their own — nothing in between.
+    own_year = (current_user.sem + 1) // 2 if current_user.sem else None
+    selected_year = None
+    if year is not None:
+        if year == "me":
+            selected_year = own_year
+            if selected_year is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Your year is unknown — log in again to refresh it.",
+                )
+        else:
+            try:
+                selected_year = int(year)
+            except (TypeError, ValueError):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="year must be 'me' or a year between 1 and 4",
+                ) from None
+            if selected_year not in (1, 2, 3, 4):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="year must be 'me' or a year between 1 and 4",
+                )
+        if selected_year != own_year:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can view all years or only your own year.",
+            )
 
     # Everyone opted in, regardless of semester — the leaderboard is global.
     query = db.query(AttendanceModel).filter(
@@ -51,8 +75,10 @@ def leaderboard(
         query = query.filter(AttendanceModel.branch == branch)
 
     # sem 1–2 = first year, 3–4 = second year, and so on.
-    if year is not None:
-        query = query.filter(AttendanceModel.sem.in_([year * 2 - 1, year * 2]))
+    if selected_year is not None:
+        query = query.filter(
+            AttendanceModel.sem.in_([selected_year * 2 - 1, selected_year * 2])
+        )
 
     today = datetime.now(IST).date()
     rows = []

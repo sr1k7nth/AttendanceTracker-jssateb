@@ -449,7 +449,7 @@ function App() {
             onDonate={() => setTab('support')}
           />
         ) : (
-          <Leaderboard myBranch={attendance?.branch} />
+          <Leaderboard myBranch={attendance?.branch} mySem={attendance?.sem} />
         )}
       </main>
 
