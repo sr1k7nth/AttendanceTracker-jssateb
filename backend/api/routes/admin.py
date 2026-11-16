@@ -1,5 +1,6 @@
 import base64
 import binascii
+import hashlib
 import logging
 import secrets
 from datetime import datetime, timezone
