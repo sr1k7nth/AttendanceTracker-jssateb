@@ -122,7 +122,7 @@ Attendance-Tracker/
 | POST | `/scraper/login` | No | Cooldown + daily cap (bypassed for `ADMIN_USN`) | Scrape portal → cache → return JWT |
 | GET | `/fetch_attendance/` | JWT | None | Cached attendance + `weeks[]` (stored weekly grids, newest first) |
 | GET | `/fetch_attendance/history` | JWT | None | Attendance % checkpoints (one per login) |
-| GET | `/leaderboard` | JWT | None | Ranked opted-in users (same semester) |
+| GET | `/leaderboard` | JWT | None | Opted-in users grouped into 4-day check-in windows and ranked by attendance (optional `branch` / `year` filters) |
 | GET | `/supporters` | No | None | Approved supporters wall (name + message) |
 | GET | `/supporters/progress` | No | None | Donation progress (month + lifetime totals) |
 | POST | `/donations` | JWT | 5 MB max | Submit proof of payment → pending review |

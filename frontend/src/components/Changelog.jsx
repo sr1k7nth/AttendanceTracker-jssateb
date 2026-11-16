@@ -1,5 +1,17 @@
 const versions = [
   {
+    version: 'v2.6.2',
+    date: 'Nov 16, 2026',
+    title: 'A Wider Leaderboard',
+    changes: [
+      'Leaderboard now includes every opted-in student, not just your own semester',
+      'New year filter — first, second, third, fourth year, or everyone',
+      'Branch filter stays: see all branches or just your own',
+      'Check-ins are grouped into consecutive four-day windows — the latest window comes first and older check-ins stay visible in their own groups',
+      'Inside each group, rows are ranked by average attendance, highest or lowest first',
+    ],
+  },
+  {
     version: 'v2.6.1',
     date: 'Nov 9, 2026',
     title: 'Feedback, replies & polish',

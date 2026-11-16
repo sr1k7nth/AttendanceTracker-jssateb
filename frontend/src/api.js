@@ -105,8 +105,10 @@ export async function fetchHistory() {
   return request('/fetch_attendance/history');
 }
 
-export async function fetchLeaderboard(sort = 'desc', branch = 'ALL') {
-  return request(`/leaderboard?sort=${sort}&branch=${branch}`);
+export async function fetchLeaderboard(sort = 'desc', branch = 'ALL', year = null) {
+  const params = new URLSearchParams({ sort, branch });
+  if (year != null) params.set('year', year);
+  return request(`/leaderboard?${params}`);
 }
 
 export function getToken() {

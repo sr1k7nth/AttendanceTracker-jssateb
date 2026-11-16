@@ -1603,6 +1603,41 @@ a:hover {
   border-color: var(--green);
 }
 
+.leaderboard-window {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin: -0.4rem 0 0.75rem;
+}
+
+.leaderboard-bucket {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1.1rem 0 0.25rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+section:first-of-type > .leaderboard-bucket {
+  margin-top: 0;
+}
+
+.leaderboard-bucket-title {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-bright);
+}
+
+.leaderboard-bucket-range {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
 .leaderboard-list {
   list-style: none;
   overflow: hidden;

@@ -102,6 +102,10 @@ class LeaderboardResponse(BaseModel):
     timestamp: datetime
     branch: str | None = None
     rank: int
+    # 0 = latest four-day window, 1 = the four days before it, and so on.
+    bucket: int = 0
+    window_start: date | None = None
+    window_end: date | None = None
     is_me: bool
     is_supporter: bool = False
 
