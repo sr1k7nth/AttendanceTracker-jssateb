@@ -329,25 +329,6 @@ function App() {
       </header>
 
       <main className="app-content">
-        {/* Permanent announcement — mentions the changelog + feedback route.
-            Renders on every page so it reads as a site notice, not a quiz.
-            Only after login (landing/login/terms/faq visitors don't see it). */}
-        {loggedIn && (
-          <div className="site-notice" role="note">
-            <span className="site-notice-text">
-              <strong>What&apos;s new:</strong> I shipped the in-app feedback page with
-              admin replies, a fresh zinc + green design, and smarter calculators.{' '}
-              <button type="button" className="link" onClick={() => goToTab('changelog')}>
-                See the changelog
-              </button>
-              . Hit any snag? The{' '}
-              <button type="button" className="link" onClick={() => goToTab('feedback')}>
-                Feedback page
-              </button>{' '}
-              takes errors with screenshots, and feature requests too.
-            </span>
-          </div>
-        )}
         {loggedIn && betaStatus && !betaDismissed && betaStatus.screenshots < betaStatus.target && (
           <div className="site-notice beta-notice" role="note">
             <span className="site-notice-text">

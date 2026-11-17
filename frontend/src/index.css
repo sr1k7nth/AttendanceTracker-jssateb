@@ -1013,8 +1013,8 @@ a:hover {
   color: var(--text-bright);
 }
 
-/* Beta-check banner: amber left border to separate it from the green
-   "What's new" announcement (both banners look near-identical otherwise) */
+/* Beta-check banner: amber left border so it stands apart from the green
+   accent used by the other notices */
 .site-notice.beta-notice {
   border-left-color: var(--yellow);
   animation: expand-in 0.25s ease;
