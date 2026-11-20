@@ -1036,6 +1036,56 @@ a:hover {
   margin-left: auto;
 }
 
+/* Milestone banner: permanent until the flag in App.jsx is switched off.
+   Green plate + share action, no dismiss button on purpose. */
+.site-notice.milestone-notice {
+  border-color: color-mix(in oklab, var(--green) 45%, transparent);
+  border-left-color: var(--green);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 70%);
+}
+
+.site-notice.milestone-notice .site-notice-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-notice-share {
+  flex-shrink: 0;
+  padding: 0.5rem 0.85rem;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in oklab, var(--green) 55%, transparent);
+  border-radius: var(--radius-btn);
+  color: var(--green);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, filter 0.2s;
+}
+
+.site-notice-share:hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: #052e16;
+  filter: brightness(1.07);
+}
+
+.site-notice-share:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+@media (max-width: 639px) {
+  .site-notice.milestone-notice {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .site-notice-share {
+    width: 100%;
+  }
+}
+
 /* --- notice banners (donation review + admin feedback reply) --- */
 .donation-notice {
   display: flex;
@@ -3064,7 +3114,7 @@ section:first-of-type > .leaderboard-bucket {
   align-items: center;
   justify-content: space-between;
   background: var(--bg-surface);
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in oklab, var(--green) 55%, transparent);
   border-radius: var(--radius-panel);
   padding: 1rem;
   font: inherit;
@@ -3078,8 +3128,13 @@ section:first-of-type > .leaderboard-bucket {
 }
 
 .history-toggle:hover {
-  border-color: var(--text-dim);
+  border-color: var(--green);
   background: var(--bg-hover);
+}
+
+.history-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
 }
 
 /* Chevrons are grey circle badges — same language as the subject-wise

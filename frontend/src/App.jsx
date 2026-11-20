@@ -16,6 +16,8 @@ import Latest from './components/Latest';
 import './index.css';
 
 const REPO_URL = 'https://github.com/sr1k7nth/AttendanceTracker-jssateb';
+// Flip this to false when the milestone banner has run its course.
+const SHOW_MILESTONE_BANNER = true;
 const MENU_ITEMS = ['faq', 'terms', 'changelog', 'feedback', 'github'];
 const MENU_LABELS = {
   faq: 'FAQ',
@@ -61,6 +63,7 @@ function App() {
   // non-dismissible one).
   const [betaStatus, setBetaStatus] = useState(null);
   const [betaDismissed, setBetaDismissed] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // Admin UI only for a panel-credential session — never a normal login.
   const isAdmin = !!sessionStorage.getItem('panel_creds');
@@ -224,6 +227,30 @@ function App() {
     window.scrollTo(0, 0);
   }
 
+  async function handleShare() {
+    const url = window.location.origin;
+    const shareData = {
+      title: 'JA-Tracker',
+      text: 'Track your attendance properly — built by a student, for students.',
+      url,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2200);
+    } catch {
+      window.prompt('Copy this link:', url);
+    }
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -329,6 +356,24 @@ function App() {
       </header>
 
       <main className="app-content">
+        {!isAdmin && SHOW_MILESTONE_BANNER && (
+          <div className="site-notice milestone-notice" role="note">
+            <span className="site-notice-text">
+              <strong>200+ signups. About 25 check-ins a day.</strong>{' '}
+              I built JA-Tracker because the portal gives you numbers, not answers.
+              If it&apos;s helping you, send it to a classmate who could use the
+              same clarity.
+            </span>
+            <button
+              type="button"
+              className="site-notice-share"
+              onClick={handleShare}
+              aria-live="polite"
+            >
+              {shareCopied ? 'Link copied' : 'Share JA-Tracker'}
+            </button>
+          </div>
+        )}
         {loggedIn && betaStatus && !betaDismissed && betaStatus.screenshots < betaStatus.target && (
           <div className="site-notice beta-notice" role="note">
             <span className="site-notice-text">
