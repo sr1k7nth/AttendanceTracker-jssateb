@@ -17,6 +17,18 @@ function fmtDate(iso) {
   });
 }
 
+function fmtDateTime(iso) {
+  return `${new Date(iso).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })} IST`;
+}
+
 /* How many classes you can still miss (or must still attend) to hold `t`%,
    given the classes held so far. Shared by the global calculator and the
    per-subject one, so both always agree. */
@@ -62,6 +74,7 @@ function HistoryChart({ points }) {
   const scrollRef = useRef(null);
   const [containerW, setContainerW] = useState(600);
   const [scroll, setScroll] = useState({ left: 0, max: 0 });
+  const [active, setActive] = useState(null);
 
   // Track the visible width so the chart is exactly as wide as the panel when
   // it fits, and wider when the points need room.
@@ -126,6 +139,17 @@ function HistoryChart({ points }) {
   const area = `${path} L${pts[pts.length - 1][0].toFixed(1)},${baseY} L${pts[0][0].toFixed(1)},${baseY} Z`;
   const guides = [75, 85].filter((g) => g > lo && g < hi);
 
+  const activePoint = active != null ? points[active] : null;
+  const activePos = active != null ? pts[active] : null;
+  const visibleX = activePos ? activePos[0] - scroll.left : 0;
+  const showTooltip =
+    activePoint && visibleX >= 0 && visibleX <= containerW;
+  const tooltipX = Math.min(
+    Math.max(visibleX, 104),
+    Math.max(104, containerW - 104)
+  );
+  const tooltipBelow = activePos ? activePos[1] < 64 : false;
+
   function slide(e) {
     const el = scrollRef.current;
     if (!el) return;
@@ -141,6 +165,9 @@ function HistoryChart({ points }) {
         ref={scrollRef}
         tabIndex={0}
         aria-label="Attendance history chart. Scroll or use the slider for older check-ins."
+        onPointerDown={(e) => {
+          if (!e.target.classList?.contains('history-hit')) setActive(null);
+        }}
       >
         <svg
           className="history-chart"
@@ -179,11 +206,31 @@ function HistoryChart({ points }) {
             return (
               <g key={i}>
                 {/* transparent, generous hit target — the tooltip lives here */}
-                <circle className="history-hit" cx={cx} cy={cy} r={12}>
-                  <title>{`${fmtDate(p.recorded_at)} — ${p.total_avg}%`}</title>
-                </circle>
                 <circle
-                  className={`history-dot ${pctColor(String(p.total_avg))}${last ? ' last' : ''}`}
+                  className="history-hit"
+                  cx={cx}
+                  cy={cy}
+                  r={12}
+                  tabIndex={0}
+                  role="img"
+                  aria-label={`${fmtDateTime(p.recorded_at)} — ${p.total_avg}%`}
+                  onPointerEnter={() => setActive(i)}
+                  onPointerLeave={(e) => {
+                    // Touch has no hover-out; keep the tooltip until another tap.
+                    if (e.pointerType !== 'touch') {
+                      setActive((cur) => (cur === i ? null : cur));
+                    }
+                  }}
+                  onFocus={() => setActive(i)}
+                  onBlur={() => setActive((cur) => (cur === i ? null : cur))}
+                  onPointerDown={(e) => {
+                    if (e.pointerType === 'touch') {
+                      setActive((cur) => (cur === i ? null : i));
+                    }
+                  }}
+                />
+                <circle
+                  className={`history-dot ${pctColor(String(p.total_avg))}${last ? ' last' : ''}${active === i ? ' active' : ''}`}
                   cx={cx}
                   cy={cy}
                   r={last ? 3.2 : 2.4}
@@ -199,6 +246,18 @@ function HistoryChart({ points }) {
           </text>
         </svg>
       </div>
+      {showTooltip && (
+        <div
+          className={`history-tooltip${tooltipBelow ? ' below' : ''}`}
+          style={{ left: tooltipX, top: activePos[1] }}
+          role="tooltip"
+        >
+          <span className="history-tooltip-date">
+            {fmtDateTime(activePoint.recorded_at)}
+          </span>
+          <strong className="history-tooltip-pct">{activePoint.total_avg}%</strong>
+        </div>
+      )}
       {scroll.max > 2 && (
         <div className="history-slider-row">
           <span className="history-slider-cap">Older</span>
