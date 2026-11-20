@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Timetable from './Timetable';
 import { fetchHistory, fetchMyDonations, fetchMyFeedback } from '../api';
 
@@ -32,8 +32,10 @@ function computeTarget(classes, present, t) {
    Y adapts to the data (always including the 75/85 lines when in reach) so a
    2% drift is visible instead of being flattened against a fixed 0–100 axis.
    The line is a Catmull-Rom spline (smooth, no overshoot beyond data), with a
-   gradient area fill, a draw-in animation, and invisible fat hit targets so
-   the <title> tooltips are easy to hit on touch. */
+   gradient area fill, a draw-in animation, and transparent fat hit targets so
+   the <title> tooltips are easy to hit on touch. Points get one fixed-width
+   slot each; once they no longer fit, the chart scrolls behind a range slider
+   instead of collapsing repeated check-ins into the same pixels. */
 function smoothPath(pts) {
   if (pts.length < 3) {
     return pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' ');
@@ -55,7 +57,56 @@ function smoothPath(pts) {
 }
 
 function HistoryChart({ points }) {
-  const W = 600, H = 220, PAD_L = 32, PAD_R = 12, PAD_T = 14, PAD_B = 26;
+  const H = 220, PAD_L = 32, PAD_R = 12, PAD_T = 14, PAD_B = 26;
+  const MIN_STEP = 44;
+  const scrollRef = useRef(null);
+  const [containerW, setContainerW] = useState(600);
+  const [scroll, setScroll] = useState({ left: 0, max: 0 });
+
+  // Track the visible width so the chart is exactly as wide as the panel when
+  // it fits, and wider when the points need room.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function measure() {
+      if (el.clientWidth > 0) setContainerW(el.clientWidth);
+      const max = Math.max(0, el.scrollWidth - el.clientWidth);
+      setScroll((s) => {
+        const left = Math.min(el.scrollLeft, max);
+        return s.left === left && s.max === max ? s : { left, max };
+      });
+    }
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    el.addEventListener('scroll', measure, { passive: true });
+    return () => {
+      ro?.disconnect();
+      el.removeEventListener('scroll', measure);
+    };
+  }, []);
+
+  const n = points.length;
+  // One slot per login: a burst of check-ins gets its own horizontal space
+  // instead of stacking onto the same few pixels.
+  const innerW = Math.max(containerW - PAD_L - PAD_R, (n - 1) * MIN_STEP);
+  const W = PAD_L + innerW + PAD_R;
+
+  // Newest is what people open the graph for — start at the right edge and
+  // re-sync the slider bounds whenever the chart width changes.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      el.scrollLeft = el.scrollWidth;
+      setScroll({
+        left: el.scrollLeft,
+        max: Math.max(0, el.scrollWidth - el.clientWidth),
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [W, n]);
+
   const vals = points.map((p) => p.total_avg);
   let lo = Math.min(Math.min(...vals), 75) - 3;
   let hi = Math.max(Math.max(...vals), 85) + 3;
@@ -66,73 +117,104 @@ function HistoryChart({ points }) {
     hi = Math.min(100, hi + 5);
   }
 
-  const t0 = Date.parse(points[0].recorded_at);
-  const t1 = Date.parse(points[points.length - 1].recorded_at);
-  const span = Math.max(t1 - t0, 1);
-  const x = (t) => PAD_L + ((t - t0) / span) * (W - PAD_L - PAD_R);
+  const x = (i) => (n === 1 ? PAD_L + innerW / 2 : PAD_L + (i / (n - 1)) * innerW);
   const y = (v) => PAD_T + (1 - (v - lo) / (hi - lo)) * (H - PAD_T - PAD_B);
   const baseY = H - PAD_B;
 
-  const pts = points.map((p) => [x(Date.parse(p.recorded_at)), y(p.total_avg)]);
+  const pts = points.map((p, i) => [x(i), y(p.total_avg)]);
   const path = smoothPath(pts);
   const area = `${path} L${pts[pts.length - 1][0].toFixed(1)},${baseY} L${pts[0][0].toFixed(1)},${baseY} Z`;
   const guides = [75, 85].filter((g) => g > lo && g < hi);
 
+  function slide(e) {
+    const el = scrollRef.current;
+    if (!el) return;
+    const left = Number(e.target.value);
+    el.scrollLeft = left;
+    setScroll((s) => ({ ...s, left }));
+  }
+
   return (
-    <svg
-      className="history-chart"
-      viewBox={`0 0 ${W} ${H}`}
-      role="img"
-      aria-label="Overall attendance percentage over time"
-    >
-      <defs>
-        <linearGradient id="history-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--green)" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="var(--green)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {guides.map((g) => (
-        <g key={g}>
-          <line
-            className={`history-guide ${g === 85 ? 'g85' : 'g75'}`}
-            x1={PAD_L}
-            x2={W - PAD_R}
-            y1={y(g)}
-            y2={y(g)}
-          />
-          <text className="history-axis" x={PAD_L - 6} y={y(g) + 3} textAnchor="end">
-            {g}
+    <div className="history-chart-wrap">
+      <div
+        className="history-scroll"
+        ref={scrollRef}
+        tabIndex={0}
+        aria-label="Attendance history chart. Scroll or use the slider for older check-ins."
+      >
+        <svg
+          className="history-chart"
+          width={W}
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          role="img"
+          aria-label="Overall attendance percentage over time"
+        >
+          <defs>
+            <linearGradient id="history-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--green)" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="var(--green)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {guides.map((g) => (
+            <g key={g}>
+              <line
+                className={`history-guide ${g === 85 ? 'g85' : 'g75'}`}
+                x1={PAD_L}
+                x2={W - PAD_R}
+                y1={y(g)}
+                y2={y(g)}
+              />
+              <text className="history-axis" x={PAD_L - 6} y={y(g) + 3} textAnchor="end">
+                {g}
+              </text>
+            </g>
+          ))}
+          <path className="history-area" d={area} />
+          <path className="history-line" d={path} pathLength="1" />
+          {points.map((p, i) => {
+            const cx = pts[i][0];
+            const cy = pts[i][1];
+            const last = i === points.length - 1;
+            return (
+              <g key={i}>
+                {/* transparent, generous hit target — the tooltip lives here */}
+                <circle className="history-hit" cx={cx} cy={cy} r={12}>
+                  <title>{`${fmtDate(p.recorded_at)} — ${p.total_avg}%`}</title>
+                </circle>
+                <circle
+                  className={`history-dot ${pctColor(String(p.total_avg))}${last ? ' last' : ''}`}
+                  cx={cx}
+                  cy={cy}
+                  r={last ? 3.2 : 2.4}
+                />
+              </g>
+            );
+          })}
+          <text className="history-axis" x={PAD_L} y={H - 8} textAnchor="start">
+            {fmtDate(points[0].recorded_at)}
           </text>
-        </g>
-      ))}
-      <path className="history-area" d={area} />
-      <path className="history-line" d={path} pathLength="1" />
-      {points.map((p, i) => {
-        const cx = pts[i][0];
-        const cy = pts[i][1];
-        const last = i === points.length - 1;
-        return (
-          <g key={i}>
-            {/* fat invisible hit target — the tooltip lives here */}
-            <circle className="history-hit" cx={cx} cy={cy} r={12}>
-              <title>{`${fmtDate(p.recorded_at)} — ${p.total_avg}%`}</title>
-            </circle>
-            <circle
-              className={`history-dot ${pctColor(String(p.total_avg))}${last ? ' last' : ''}`}
-              cx={cx}
-              cy={cy}
-              r={last ? 1.5 : 1.1}
-            />
-          </g>
-        );
-      })}
-      <text className="history-axis" x={PAD_L} y={H - 8} textAnchor="start">
-        {fmtDate(points[0].recorded_at)}
-      </text>
-      <text className="history-axis" x={W - PAD_R} y={H - 8} textAnchor="end">
-        {fmtDate(points[points.length - 1].recorded_at)}
-      </text>
-    </svg>
+          <text className="history-axis" x={W - PAD_R} y={H - 8} textAnchor="end">
+            {fmtDate(points[points.length - 1].recorded_at)}
+          </text>
+        </svg>
+      </div>
+      {scroll.max > 2 && (
+        <div className="history-slider-row">
+          <span className="history-slider-cap">Older</span>
+          <input
+            className="history-slider"
+            type="range"
+            min={0}
+            max={Math.round(scroll.max)}
+            value={Math.min(Math.round(scroll.left), Math.round(scroll.max))}
+            onChange={slide}
+            aria-label="Scroll attendance history"
+          />
+          <span className="history-slider-cap">Newer</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -384,7 +466,7 @@ export default function AttendanceSummary({ data, onRefresh, loading, onDonate }
             )}
             {history.length > 1 && (
               <p className="history-footnote">
-                One point per login, timestamped when the portal was re-scraped. Hover a dot for the exact date.
+                One point per login, evenly spaced so repeat check-ins stay readable. Drag the slider (or swipe) for older points; hover a dot for the exact date.
               </p>
             )}
           </div>

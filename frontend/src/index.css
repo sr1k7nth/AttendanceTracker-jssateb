@@ -3139,10 +3139,62 @@ section:first-of-type > .leaderboard-bucket {
   }
 }
 
+.history-chart-wrap {
+  min-width: 0;
+}
+
+/* The SVG is intentionally wider than the panel once check-ins need room.
+   Swiping / the range slider below moves through older points instead of
+   squeezing them all into one window. */
+.history-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  padding-bottom: 0.35rem;
+}
+
+.history-scroll:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
 .history-chart {
-  width: 100%;
+  width: auto;
+  max-width: none;
   height: auto;
   display: block;
+}
+
+.history-hit {
+  fill: transparent;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.history-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.65rem;
+}
+
+.history-slider-cap {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.history-slider {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--green);
+  cursor: pointer;
 }
 
 .history-line {
