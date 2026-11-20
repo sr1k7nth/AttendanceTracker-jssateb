@@ -359,7 +359,8 @@ function App() {
         {!isAdmin && SHOW_MILESTONE_BANNER && (
           <div className="site-notice milestone-notice" role="note">
             <span className="site-notice-text">
-              <strong>200+ signups. About 25 check-ins a day.</strong>{' '}
+              <strong>200+ signups. About 25 check-ins a day.</strong>
+              <br />
               I built JA-Tracker because the portal gives you numbers, not answers.
               If it&apos;s helping you, send it to a classmate who could use the
               same clarity.
