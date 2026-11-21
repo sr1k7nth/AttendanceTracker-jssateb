@@ -13,6 +13,7 @@ import DonationPopup from './components/DonationPopup';
 import AdminPanel from './components/AdminPanel';
 import Feedback from './components/Feedback';
 import Latest from './components/Latest';
+import { Analytics } from '@vercel/analytics/react';
 import './index.css';
 
 const REPO_URL = 'https://github.com/sr1k7nth/AttendanceTracker-jssateb';
@@ -528,6 +529,7 @@ function App() {
           </a>
         </p>
       </footer>
+      <Analytics route={`/${tab}`} path={`/${tab}`} />
     </div>
   );
 }
